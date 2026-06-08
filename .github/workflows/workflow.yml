@@ -5,19 +5,7 @@ on:
     branches: [main]
 
 env:
-  AWS_REGION: ap-northeast-2
-  AWS_ACCOUNT_ID: "013969386212"
-  ECR_REPOSITORY: bbd-inventory
-  DOCKER_IMAGE_NAME: bbd-inventory
-
-# 순서
-# 1. Docker Hub 로그인
-# 2. Docker Hub용 이미지 빌드
-# 3. Docker Hub에 push
-# 4. AWS 인증
-# 5. ECR 로그인
-# 6. 같은 이미지에 ECR 태그 추가
-# 7. ECR에 push
+  DOCKER_IMAGE_NAME: bbd-inventor
 
 jobs:
   build-and-push:
@@ -30,6 +18,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
+
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -39,20 +28,11 @@ jobs:
             -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest \
             .
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+      - name: Trigger infra deploy
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: peter-evans/repository-dispatch@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Push to ECR
-        run: |
-          DOCKERHUB_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
-          ECR_IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
-          docker tag $DOCKERHUB_IMAGE $ECR_IMAGE
-          docker push $ECR_IMAGE
+          token: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+          repository: BBD-AES/infra
+          event-type: deploy-service
+          client-payload: '{"service":"bbd-inventory"}'
