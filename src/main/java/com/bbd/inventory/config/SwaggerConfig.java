@@ -11,19 +11,19 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
-                .info(new Info().title("sales API")
-                        .description("sales Application API Documentation")
+                .info(new Info().title("inventory API")
+                        .description("inventory Application API Documentation")
                         .version("v1.0"))
                 .addServersItem(new Server()
-                        .url("http://localhost:8085/sales")
+                        .url("http://localhost:8085/inventory")
                         .description("Local Direct"))
 
                 .addServersItem(new Server()
-                        .url("http://192.168.201.110/sales")
+                        .url("http://192.168.201.110/inventory")
                         .description("Nginx"))
 
                 .addServersItem(new Server()
-                        .url("http://112.218.95.58/sales")
+                        .url("http://112.218.95.58/inventory")
                         .description("External Nginx"));
 
 
