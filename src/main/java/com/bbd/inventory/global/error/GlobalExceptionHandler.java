@@ -23,7 +23,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse response = new ErrorResponse(
                 errorCode.getStatus(),
                 errorCode.getCode(),
-                errorCode.getMessage()
+                e.getMessage()   // formatted message (carries dynamic args); equals raw for the no-arg ctor
         );
         return ResponseEntity
                 .status(errorCode.getStatus())

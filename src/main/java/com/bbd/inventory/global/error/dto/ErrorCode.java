@@ -17,7 +17,10 @@ public enum ErrorCode {
             "창고 부품이 존재합니다."),
 
     WAREHOUSE_HAS_STOCK(HttpStatus.CONFLICT, "WAREHOUSE_HAS_STOCK",
-            "창고에 물품이 있기 때문에 비활성화가 불가능합니다.");
+            "창고에 물품이 있기 때문에 비활성화가 불가능합니다."),
+
+    INVALID_FILTER(HttpStatus.BAD_REQUEST, "INVALID_FILTER",
+            "Unknown warehouseCode: %s");
 
 
     private final HttpStatus status;
