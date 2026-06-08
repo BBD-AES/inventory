@@ -23,6 +23,10 @@ public class SwaggerConfig {
                         .description("Nginx"))
 
                 .addServersItem(new Server()
+                        .url("http://100.73.142.41:8083/inventory")
+                        .description("bbd tailscale"))
+
+                .addServersItem(new Server()
                         .url("http://112.218.95.58/inventory")
                         .description("External Nginx"));
 
