@@ -28,7 +28,9 @@ springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: alpha
-    url: /inventory/v3/api-docs
     config-url: /inventory/v3/api-docs/swagger-config
+    url: /inventory/v3/api-docs
+
+
 
 
