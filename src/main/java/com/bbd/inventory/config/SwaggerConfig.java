@@ -15,7 +15,7 @@ public class SwaggerConfig {
                         .description("inventory Application API Documentation")
                         .version("v1.0"))
                 .addServersItem(new Server()
-                        .url("http://localhost:8085/inventory")
+                        .url("http://localhost:8083/inventory")
                         .description("Local Direct"))
 
                 .addServersItem(new Server()
