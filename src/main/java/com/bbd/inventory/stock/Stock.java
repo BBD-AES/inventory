@@ -30,6 +30,10 @@ public class Stock {
     @Column(nullable = false, length = 255)
     private String name;
 
+    // Denormalized from catalog (ItemInfo) so reads return without a cross-service call.
+    @Column(length = 20)
+    private String unit;
+
     @Column(nullable = false)
     private int currentStock;
 
@@ -55,6 +59,7 @@ public class Stock {
             Warehouse warehouse,
             String sku,
             String name,
+            String unit,
             int currentStock,
             int availableStock,
             int safetyStock,
@@ -64,10 +69,16 @@ public class Stock {
         this.warehouse = warehouse;
         this.sku = sku;
         this.name = name;
+        this.unit = unit;
         this.currentStock = currentStock;
         this.availableStock = availableStock;
         this.safetyStock = safetyStock;
         this.category = category;
         this.location = location;
     }
+
+    public void changeLocation(String location) {
+        this.location = location;
+    }
+
 }

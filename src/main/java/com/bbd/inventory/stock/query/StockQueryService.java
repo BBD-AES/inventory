@@ -42,4 +42,14 @@ public class StockQueryService {
                 ).map(StockResponse::from)
         );
     }
+
+    @Transactional(readOnly = true)
+    public StockResponse getOne(String sku, String warehouseCode) {
+        return stockQueryRepository
+                .findBySkuAndWarehouseCode(sku, warehouseCode)
+                .map(StockResponse::from)
+                .orElseThrow(() -> new ApiException(
+                        ErrorCode.WAREHOUSE_NOT_FOUND, sku, warehouseCode
+                ));
+    }
 }

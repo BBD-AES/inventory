@@ -7,7 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface StockQueryRepository extends JpaRepository<Stock, Long> {
+import java.util.Optional;
+
+public interface
+StockQueryRepository extends JpaRepository<Stock, Long> {
 
     /**
      * All filters pushed to SQL so pagination counts stay correct and the
@@ -37,4 +40,13 @@ public interface StockQueryRepository extends JpaRepository<Stock, Long> {
             @Param("belowSafety") boolean belowSafety,
             Pageable pageable
     );
+
+    /** One keyed row; warehouse fetched to avoid N+1 when mapping warehouseCode. */
+    @Query("""
+            SELECT s FROM Stock s JOIN FETCH s.warehouse w
+            WHERE s.sku = :sku AND w.code = :warehouseCode
+            """)
+    Optional<Stock> findBySkuAndWarehouseCode(
+            @Param("sku") String sku,
+            @Param("warehouseCode") String warehouseCode);
 }

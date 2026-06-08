@@ -21,4 +21,14 @@ public class StockQueryController {
             @PageableDefault(size = 20)Pageable pageable) {
         return queryService.search(cond, pageable);
     }
+
+    // 단건 조회
+    @GetMapping("/{sku}/{warehouseCode}")
+    public StockResponse getOne(
+            @PathVariable String sku,
+            @PathVariable String warehouseCode) {
+
+        return queryService.getOne(sku, warehouseCode);
+    }
+
 }

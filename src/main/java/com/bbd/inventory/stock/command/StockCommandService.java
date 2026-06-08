@@ -7,6 +7,8 @@ import com.bbd.inventory.stock.ItemInfo;
 import com.bbd.inventory.stock.Stock;
 import com.bbd.inventory.stock.StockRepository;
 import com.bbd.inventory.stock.command.dto.CreateStockCommand;
+import com.bbd.inventory.stock.command.dto.StockLocationResponse;
+import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
 import com.bbd.inventory.warehouse.Warehouse;
 import com.bbd.inventory.warehouse.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +45,16 @@ public class StockCommandService {
                 .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND, cmd.sku()));
         return 0L;
     }
+
+    @Transactional
+    public StockLocationResponse changeLocation(
+            String sku, String warehouseCode, UpdateLocationCommand cmd) {
+
+        Stock stock = stockRepository.findBySkuAndWarehouseCode(sku, warehouseCode)
+                .orElseThrow(() -> new ApiException(
+                        ErrorCode.WAREHOUSE_NOT_FOUND, sku, warehouseCode
+                ));
+    }
+
 
 }
