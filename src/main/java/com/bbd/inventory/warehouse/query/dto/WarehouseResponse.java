@@ -1,4 +1,4 @@
-package com.bbd.inventory.warehouse.dto;
+package com.bbd.inventory.warehouse.query.dto;
 
 import com.bbd.inventory.warehouse.Warehouse;
 import com.bbd.inventory.warehouse.WarehouseType;

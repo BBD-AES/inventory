@@ -1,6 +1,5 @@
 package com.bbd.inventory.warehouse;
 
-import com.bbd.inventory.global.error.dto.WarehouseUpdateRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -14,10 +13,10 @@ public class Warehouse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
     @Column(nullable = false, unique = true)
-    String code;
+    private String code;
 
     @Column(nullable = false)
     private String name;

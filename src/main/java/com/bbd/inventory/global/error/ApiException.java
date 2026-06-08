@@ -16,4 +16,12 @@ public class ApiException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    /**
+     * 메세지에 동적 값이 필요한 경우 (예: "Unknown warehouseCode: %s")
+     */
+    public ApiException(ErrorCode errorCode, Object... args) {
+        super(String.format(errorCode.getMessage(), args));
+        this.errorCode = errorCode;
+    }
+
 }
