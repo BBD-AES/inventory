@@ -29,7 +29,7 @@ public class StockQueryService {
 
         if (cond.warehouseCode() != null
                 && !warehouseRepository.existsByCode(cond.warehouseCode())) {
-            throw new ApiException(ErrorCode.INVALID_FILTER, cond.warehouseCode());
+            throw new ApiException(ErrorCode.INVALID_FILTER);
         }
 
         return PageResponse.from(
@@ -48,8 +48,6 @@ public class StockQueryService {
         return stockQueryRepository
                 .findBySkuAndWarehouseCode(sku, warehouseCode)
                 .map(StockResponse::from)
-                .orElseThrow(() -> new ApiException(
-                        ErrorCode.WAREHOUSE_NOT_FOUND, sku, warehouseCode
-                ));
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
     }
 }

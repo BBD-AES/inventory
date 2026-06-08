@@ -1,11 +1,14 @@
 package com.bbd.inventory.stock.client;
 
+import com.bbd.inventory.global.error.ApiException;
+import com.bbd.inventory.global.error.dto.ErrorCode;
 import com.bbd.inventory.stock.ItemClient;
 import com.bbd.inventory.stock.ItemInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.Optional;
 
@@ -32,6 +35,9 @@ public class RestItemClient implements ItemClient {
             return Optional.ofNullable(r).map(this::toInfo);
         } catch (HttpClientErrorException.NotFound e) {
             return Optional.empty();
+        } catch (RestClientException e) {
+            // catalog 5xx / timeout / connection refused -> not our 500
+            throw new ApiException(ErrorCode.ITEM_SERVICE_UNAVAILABLE);
         }
     }
 

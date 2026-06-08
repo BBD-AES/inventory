@@ -29,20 +29,16 @@ public class StockCommandService {
     public Long createStock(CreateStockCommand cmd) {
         // resolve the warehouse (local, authoritative to inventory)
         Warehouse warehouse = warehouseRepository.findByCode(cmd.warehouseCode())
-                .orElseThrow(() -> new ApiException(
-                        ErrorCode.WAREHOUSE_NOT_FOUND, cmd.warehouseCode()
-                ));
+                .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND));
 
         // one stock row per (warehouse, sku) -- guard duplicates
         if (stockRepository.existsByWarehouseAndSku(warehouse, cmd.sku())) {
-            // TODO: fix the error code to STOCK_ALREADY_EXISTS
-            throw new ApiException(ErrorCode.WAREHOUSE_HAS_STOCK);
+            throw new ApiException(ErrorCode.STOCK_ALREADY_EXISTS);
         }
 
         // SYNC cross-service validation + fetch the catalog facts to denormalize
-        // TODO: fix error code to SKU_NOT_FOUND
         ItemInfo item = itemClient.getBySku(cmd.sku())
-                .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND, cmd.sku()));
+                .orElseThrow(() -> new ApiException(ErrorCode.SKU_NOT_FOUND));
         return 0L;
     }
 
@@ -51,9 +47,16 @@ public class StockCommandService {
             String sku, String warehouseCode, UpdateLocationCommand cmd) {
 
         Stock stock = stockRepository.findBySkuAndWarehouseCode(sku, warehouseCode)
-                .orElseThrow(() -> new ApiException(
-                        ErrorCode.WAREHOUSE_NOT_FOUND, sku, warehouseCode
-                ));
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+
+        // entity method; dirty-checked, no movement
+        stock.changeLocation(cmd.location());
+
+        stockRepository.flush();
+
+        return new StockLocationResponse(
+                sku, warehouseCode, stock.getLocation(), stock.getUpdatedAt()
+        );
     }
 
 
