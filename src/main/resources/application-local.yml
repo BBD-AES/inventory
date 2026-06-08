@@ -35,6 +35,9 @@ springdoc:
     config-url: /inventory/v3/api-docs/swagger-config
     url: /inventory/v3/api-docs
 
+items:
+  base-url: http://192.168.200.220/item
+
 
 
 
