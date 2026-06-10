@@ -19,6 +19,10 @@ public class SwaggerConfig {
                         .description("Local Direct"))
 
                 .addServersItem(new Server()
+                        .url("http://localhost:8080")
+                        .description("Local Local"))
+
+                .addServersItem(new Server()
                         .url("http://192.168.201.110/inventory")
                         .description("Nginx"))
 

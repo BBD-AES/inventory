@@ -32,12 +32,14 @@ public class StockQueryService {
             throw new ApiException(ErrorCode.INVALID_FILTER);
         }
 
+        boolean belowSafety = Boolean.TRUE.equals(cond.belowSafety());
+
         return PageResponse.from(
                 stockQueryRepository.search(
                         cond.warehouseCode(),
                         cond.sku(),
                         cond.category(),
-                        cond.belowSafety(),
+                        belowSafety,
                         pageable
                 ).map(StockResponse::from)
         );

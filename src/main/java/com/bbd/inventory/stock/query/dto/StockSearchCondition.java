@@ -8,5 +8,5 @@ public record StockSearchCondition(
         String warehouseCode,
         String sku,
         String category,
-        boolean belowSafety
+        Boolean belowSafety
 ) {}
