@@ -7,5 +7,7 @@ public record ItemResponse(
         String sku,
         String name,
         String category,            // labeled in KR
-        int safetyStock
+        String unit,
+        int safetyStock,
+        int unitPrice
 ) {}
