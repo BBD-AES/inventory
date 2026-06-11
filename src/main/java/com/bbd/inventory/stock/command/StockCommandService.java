@@ -2,9 +2,15 @@ package com.bbd.inventory.stock.command;
 
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
-import com.bbd.inventory.stock.*;
+import com.bbd.inventory.stock.ItemClient;
+import com.bbd.inventory.stock.ItemInfo;
+import com.bbd.inventory.stock.Stock;
+import com.bbd.inventory.stock.StockRepository;
+import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
 import com.bbd.inventory.stock.command.dto.CreateStockCommand;
+import com.bbd.inventory.stock.command.dto.ReceiveStockCommand;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
+import com.bbd.inventory.stock.command.dto.TransferStockCommand;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
 import com.bbd.inventory.stock.event.ItemPriceChanged;
 import com.bbd.inventory.stock.event.StockInRequested;
@@ -58,21 +64,52 @@ public class StockCommandService {
         );
     }
 
-    @Transactional
-    public void outbound(StockOutRequested e) {
-        // for each outbound lines
-        for (StockOutRequested.Line line : e.lines()) {
-            Stock stock = stockRepository.findBySkuAndWarehouseCode(line.sku(), line.warehouseCode())
-                    .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+    // ---------------------------------------------------------------------------
+    // Event-driven commands — triggered by StockEventConsumers, not by any REST POST.
+    // The fact is owned upstream; inventory only RECORDS the resulting stock_movement.
+    //
+    // Each method is ONE @Transactional unit that must (CONVENTION §6, §11, §12):
+    //   0. de-dupe: insert processed_events(eventId) — unique constraint rejects a replay
+    //      (at-least-once delivery means the same event can arrive twice). Skip if present.
+    //   1. resolve the authoritative stock row(s) (already local to inventory)
+    //   2. mutate through an entity method that enforces availableStock >= 0 + @Version
+    //      and produces an append-only StockMovement (the strong source)
+    //   3. outbox.append(StockMovementRecorded.from(movement)) in this SAME tx
+    // No broker / HTTP / @Async call here — the relay publishes out of band (§8).
+    // ---------------------------------------------------------------------------
 
-            stock.applyOut(line.quantity());
-            stockMovementRepository.save(StockMovement.builder()
-                    .sku(line.sku())
-                    .warehouseCode(line.warehouseCode())
-                    .unitPrice(line.unitPrice())
-                    .referenceNumber(e.soNumber())
-                    .build());
-        }
+    /** GoodsInbound -> +quantity at warehouse. Vendor delivery, owned by Procurement. */
+    @Transactional
+    public void receive(ReceiveStockCommand cmd) {
+        Stock stock = stockRepository.findBySkuAndWarehouseCode(cmd.sku(), cmd.warehouseCode())
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+        // TODO §12 de-dupe on cmd.eventId(); skip if already processed.
+        // TODO entity method: stock.receive(cmd.quantity()) -> append-only StockMovement(+qty).
+        // TODO outbox.append(StockMovementRecorded.from(movement)) in this tx.
+    }
+
+    /** StockTransferRequested -> -qty at source, +qty at target. Owned by Sales (HQ). */
+    @Transactional
+    public void transfer(TransferStockCommand cmd) {
+        Stock from = stockRepository.findBySkuAndWarehouseCode(cmd.sku(), cmd.fromWarehouseCode())
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+        Stock to = stockRepository.findBySkuAndWarehouseCode(cmd.sku(), cmd.toWarehouseCode())
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+        // TODO §12 de-dupe on cmd.eventId().
+        // TODO from.issue(cmd.quantity()) (enforces availableStock >= 0) + to.receive(cmd.quantity());
+        //      two paired append-only StockMovements (OUT then IN).
+        // TODO outbox.append(...) for each movement, this tx.
+    }
+
+    /** CountAdjusted -> set stock to the counted figure via a signed correction movement. */
+    @Transactional
+    public void adjust(AdjustStockCommand cmd) {
+        Stock stock = stockRepository.findBySkuAndWarehouseCode(cmd.sku(), cmd.warehouseCode())
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+        // TODO §12 de-dupe on cmd.eventId().
+        // int amountDiff = cmd.countedQuantity() - stock.getCurrentStock();
+        // TODO stock.adjust(amountDiff, cmd.reason()) -> signed append-only StockMovement.
+        // TODO outbox.append(StockMovementRecorded.from(movement)) in this tx.
     }
 
     /*
