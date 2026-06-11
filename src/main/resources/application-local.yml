@@ -32,7 +32,7 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka.inwoohub.com:9092}
     consumer:
       group-id: stock-group
-      auto-offset-reset: earliest
+      auto-offset-reset: latest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
