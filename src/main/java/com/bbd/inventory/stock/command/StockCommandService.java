@@ -11,7 +11,6 @@ import com.bbd.inventory.stock.event.StockInRequested;
 import com.bbd.inventory.stock.event.StockOutRequested;
 import com.bbd.inventory.warehouse.Warehouse;
 import com.bbd.inventory.warehouse.WarehouseRepository;
-import jakarta.transaction.TransactionScoped;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

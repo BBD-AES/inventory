@@ -31,7 +31,7 @@ public class StockMovement {
     @Column(nullable = false, length = 50) private String referenceNumber;  //so/poNum
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false) private Instant occuredAt;
+    @Column(nullable = false, updatable = false) private Instant occurredAt;
 
     @Builder
     private StockMovement(String sku, String warehouseCode, MovementType type,

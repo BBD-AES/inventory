@@ -11,9 +11,9 @@ spring:
       enabled: true # 자바 21 버전을 통해서 이번에 버츄얼 스레드도 한번 써보기
 
   datasource:
-    url: ${DB_ENDPOINT}
-    username: ${DB_NAME}
-    password: ${DB_PASSWORD}
+    url: ${DB_ENDPOINT:jdbc:postgresql://localhost:5432/inventory}
+    username: ${DB_NAME:inventory_user}
+    password: ${DB_PASSWORD:inventory_password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -27,6 +27,21 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
 
+  kafka:
+
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka.inwoohub.com:9092}
+    consumer:
+      group-id: stock-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+
+
 # Swagger
 springdoc:
   swagger-ui:
@@ -34,6 +49,12 @@ springdoc:
     operations-sorter: alpha
     config-url: /inventory/v3/api-docs/swagger-config
     url: /inventory/v3/api-docs
+
+logging:
+  level:
+    com.bbd.inventory: DEBUG
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
 
 items:
   base-url: http://100.73.142.41/item
