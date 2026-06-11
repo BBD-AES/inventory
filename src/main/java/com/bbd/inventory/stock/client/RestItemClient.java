@@ -43,6 +43,6 @@ public class RestItemClient implements ItemClient {
 
     // wire DTO -> domain DTO
     private ItemInfo toInfo(ItemResponse r) {
-        return new ItemInfo(r.sku(), r.name(), r.category(), r.safetyStock());
+        return new ItemInfo(r.sku(), r.name(), r.category(), r.unit(), r.safetyStock(), r.unitPrice());
     }
 }

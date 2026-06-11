@@ -12,6 +12,9 @@ import com.bbd.inventory.stock.command.dto.ReceiveStockCommand;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
 import com.bbd.inventory.stock.command.dto.TransferStockCommand;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
+import com.bbd.inventory.stock.event.ItemPriceChanged;
+import com.bbd.inventory.stock.event.StockInRequested;
+import com.bbd.inventory.stock.event.StockOutRequested;
 import com.bbd.inventory.warehouse.Warehouse;
 import com.bbd.inventory.warehouse.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +28,7 @@ public class StockCommandService {
     private final StockRepository stockRepository;
     private final WarehouseRepository warehouseRepository;      // cross-context read
     private final ItemClient itemClient;                        // cross-service read
-
-    // TODO: implement stock command operations (inbound, outbound, adjust, reserve).
+    private final StockMovementRepository stockMovementRepository;
 
     @Transactional
     public Long createStock(CreateStockCommand cmd) {
@@ -110,4 +112,54 @@ public class StockCommandService {
         // TODO outbox.append(StockMovementRecorded.from(movement)) in this tx.
     }
 
+    /*
+        procurement.stock-in-requested -> +qty (create if missing) +
+        movement(IN).
+     */
+    @Transactional
+    public void inbound(StockInRequested e) {
+
+        for (StockInRequested.Line line : e.lines()) {
+            Stock stock = stockRepository.findBySkuAndWarehouseCode(line.sku(), line.warehouseCode())
+                    .orElseGet(() -> createForInbound(line));
+
+            stock.applyIn(line.quantity());
+            stockMovementRepository.save(StockMovement.builder()
+                    .sku(line.sku())
+                    .warehouseCode(line.warehouseCode())
+                    .type(MovementType.IN)
+                    .quantity(line.quantity())
+                    .unitPrice(line.unitPrice())
+                    .referenceNumber(e.poNumber())
+                    .build());
+        }
+
+    }
+
+    private Stock createForInbound(StockInRequested.Line line) {
+
+        Warehouse warehouse = warehouseRepository.findByCode(line.warehouseCode())
+                .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND));
+
+        ItemInfo item = itemClient.getBySku(line.sku())
+                .orElseThrow(() -> new ApiException(ErrorCode.SKU_NOT_FOUND));
+
+        return stockRepository.save(Stock.builder()
+                .warehouse(warehouse)
+                .sku(item.sku())
+                .name(item.name())
+                .unit(item.unit())
+                .currentStock(0)
+                .availableStock(0)
+                .safetyStock(item.safetyStock())
+                .category(item.category())
+                .location(null)
+                .unitPrice(item.unitPrice())
+                .build());
+    }
+
+    @Transactional
+    public void updateUnitPrice(ItemPriceChanged e) {
+        stockRepository.updateUnitPriceBySku(e.sku(), e.unitPrice());
+    }
 }

@@ -9,5 +9,7 @@ public record ItemInfo(
         String sku,
         String name,
         String category,
-        int safetyStock
+        String unit,
+        int safetyStock,
+        int unitPrice
 ) {}

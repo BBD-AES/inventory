@@ -2,6 +2,7 @@ package com.bbd.inventory.stock;
 
 import com.bbd.inventory.warehouse.Warehouse;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -27,5 +28,20 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Optional<Stock> findBySkuAndWarehouseCode(
             @Param("sku") String sku,
             @Param("warehouseCode") String warehouseCode);
+
+
+    /*
+        because the QUERY changes data, and Spring Data normally assumes that
+        queries are SELECT, so in order to do UPDATE, DELETE, INSERT, @Modifying is used.
+     */
+
+    @Modifying
+    @Query("""
+            UPDATE Stock s
+            SET s.unitPrice = :unitPrice
+            WHERE s.sku = :sku
+            """)
+    int updateUnitPriceBySku(@Param("sku") String sku,
+                             @Param("unitPrice") int unitPrice);
 
 }
