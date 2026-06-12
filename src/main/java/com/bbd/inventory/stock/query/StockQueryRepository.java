@@ -1,12 +1,15 @@
 package com.bbd.inventory.stock.query;
 
 import com.bbd.inventory.stock.Stock;
+import com.bbd.inventory.stock.query.dto.StockKpiView;
+import com.bbd.inventory.stock.query.dto.WarehouseStockView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface
@@ -49,4 +52,40 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
     Optional<Stock> findBySkuAndWarehouseCode(
             @Param("sku") String sku,
             @Param("warehouseCode") String warehouseCode);
+
+    /**
+     *  stock summary.
+     *  retrieves warehouse information and aggregates stock data.
+     *  selecting warehouse code, name, and type (HQ, BRANCH)
+     *
+     *  COALESCE => returns first non-null value
+     *  initial LEFT JOIN shows null warehouses as well.
+     */
+
+    @Query("""
+            SELECT w.code AS code, w.name AS name, w.type AS type,
+                COUNT(DISTINCT s.sku) AS skuCount,
+                COALESCE(SUM(s.currentStock), 0) AS currentStock
+            FROM Warehouse w LEFT JOIN Stock s ON s.warehouse = w
+            WHERE w.active = true
+            GROUP BY w.code, w.name, w.type
+            ORDER BY w.code
+            """)
+    List<WarehouseStockView> warehouseStockSummary();
+
+    /**
+     * stock KPIs
+     */
+    @Query("""
+            SELECT COUNT(DISTINCT s.sku) AS totalSkus,
+                COALESCE(SUM(s.currentStock), 0) AS totalCurrentStock,
+                COALESCE(SUM(s.availableStock), 0) AS totalAvailableStock,
+                SUM(CASE WHEN s.currentStock < s.safetyStock
+                            THEN 1 ELSE 0 END) AS belowSafetyCount
+            FROM Stock s
+            WHERE s.warehouse.active = true
+            """)
+    StockKpiView stockKpis();
+
+
 }

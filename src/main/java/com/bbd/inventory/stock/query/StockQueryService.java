@@ -3,13 +3,14 @@ package com.bbd.inventory.stock.query;
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
-import com.bbd.inventory.stock.query.dto.StockResponse;
-import com.bbd.inventory.stock.query.dto.StockSearchCondition;
+import com.bbd.inventory.stock.query.dto.*;
 import com.bbd.inventory.warehouse.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -52,4 +53,27 @@ public class StockQueryService {
                 .map(StockResponse::from)
                 .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
     }
+
+    @Transactional(readOnly = true)
+    public StockSummaryResponse summary() {
+        List<WarehouseStockView> warehouse = stockQueryRepository.warehouseStockSummary();
+        StockKpiView kpi = stockQueryRepository.stockKpis();
+
+        List<StockSummaryResponse.WarehouseStock> warehouses = warehouse.stream()
+                .map(v -> new StockSummaryResponse.WarehouseStock(
+                        v.getCode(), v.getName(), v.getType(), true,
+                        v.getSkuCount(), v.getCurrentStock()))
+                .toList();
+
+        return new StockSummaryResponse(
+                warehouseRepository.count(),        // all
+                warehouses.size(),                  // active
+                kpi.getTotalSkus(),
+                kpi.getTotalCurrentStock(),
+                kpi.getTotalAvailableStock(),
+                kpi.getBelowSafetyCount(),
+                warehouses
+        );
+    }
+
 }

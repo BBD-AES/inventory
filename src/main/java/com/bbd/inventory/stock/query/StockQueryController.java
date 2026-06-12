@@ -3,6 +3,7 @@ package com.bbd.inventory.stock.query;
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.stock.query.dto.StockResponse;
 import com.bbd.inventory.stock.query.dto.StockSearchCondition;
+import com.bbd.inventory.stock.query.dto.StockSummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -29,6 +30,11 @@ public class StockQueryController {
             @PathVariable String warehouseCode) {
 
         return queryService.getOne(sku, warehouseCode);
+    }
+
+    @GetMapping("/summary")
+    public StockSummaryResponse summary() {
+        return queryService.summary();
     }
 
 }
