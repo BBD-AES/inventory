@@ -3,7 +3,6 @@ package com.bbd.inventory.stock.command;
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
 import com.bbd.inventory.stock.*;
-import com.bbd.inventory.stock.command.dto.CreateStockCommand;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
 import com.bbd.inventory.stock.event.ItemPriceChanged;
@@ -23,23 +22,6 @@ public class StockCommandService {
     private final WarehouseRepository warehouseRepository;      // cross-context read
     private final ItemClient itemClient;                        // cross-service read
     private final StockMovementRepository stockMovementRepository;
-
-    @Transactional
-    public Long createStock(CreateStockCommand cmd) {
-        // resolve the warehouse (local, authoritative to inventory)
-        Warehouse warehouse = warehouseRepository.findByCode(cmd.warehouseCode())
-                .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND));
-
-        // one stock row per (warehouse, sku) -- guard duplicates
-        if (stockRepository.existsByWarehouseAndSku(warehouse, cmd.sku())) {
-            throw new ApiException(ErrorCode.STOCK_ALREADY_EXISTS);
-        }
-
-        // SYNC cross-service validation + fetch the catalog facts to denormalize
-        ItemInfo item = itemClient.getBySku(cmd.sku())
-                .orElseThrow(() -> new ApiException(ErrorCode.SKU_NOT_FOUND));
-        return 0L;
-    }
 
     @Transactional
     public StockLocationResponse changeLocation(
@@ -69,6 +51,8 @@ public class StockCommandService {
             stockMovementRepository.save(StockMovement.builder()
                     .sku(line.sku())
                     .warehouseCode(line.warehouseCode())
+                    .type(MovementType.OUT)
+                    .quantity(line.quantity())
                     .unitPrice(line.unitPrice())
                     .referenceNumber(e.soNumber())
                     .build());

@@ -6,7 +6,7 @@ public record StockInRequested(
         String eventId,
         String source,
         String eventType,
-        String occuredAt,
+        String occurredAt,
         String poNumber,
         String soId,
         List<Line> lines) {

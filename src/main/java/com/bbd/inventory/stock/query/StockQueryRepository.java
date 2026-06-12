@@ -87,5 +87,12 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
             """)
     StockKpiView stockKpis();
 
+    @Query("""
+            SELECT s FROM Stock s JOIN FETCH s.warehouse w
+            WHERE s.sku = :sku
+            ORDER BY w.code
+            """)
+    List<Stock> findAllBySku(@Param("sku") String sku);
+
 
 }
