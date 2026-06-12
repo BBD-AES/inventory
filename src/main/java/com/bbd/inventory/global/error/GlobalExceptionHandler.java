@@ -1,11 +1,15 @@
 package com.bbd.inventory.global.error;
 
 
+import com.bbd.inventory.global.error.dto.ErrorCode;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import java.time.OffsetDateTime;
 
 /**
  * 전역 예외처리. 모든 갈래를 ProblemDetail 로 통일한다.
@@ -23,5 +27,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
     // 이 아래로 각자의 서비스에 맞는 에러 핸들러를 추가하여 사용
 
+    /**
+     *  Generic 500 fallback
+     *
+     *    (Exception.class is least-specific, so @Valid/built-in errors still go to
+     *   ResponseEntityExceptionHandler; only truly unhandled ones hit this.)
+     *
+     * @param e
+     * @return
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleUnexpected(Exception e) {
+        ProblemDetail body =
+                ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        body.setTitle(ErrorCode.INTERNAL_ERROR.name());
+        body.setDetail(ErrorCode.INTERNAL_ERROR.getDefaultMessage());
+        body.setProperty("code", ErrorCode.INTERNAL_ERROR.name());
+        body.setProperty("timestamp", OffsetDateTime.now());
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
 
 }
+
+
