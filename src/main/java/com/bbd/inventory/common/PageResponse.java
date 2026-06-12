@@ -11,7 +11,7 @@ public record PageResponse<T>(
         List<T> content,
         int page,
         int size,
-        long totalElement,
+        long totalElements,
         int totalPages
 ) {
     public static <T> PageResponse<T> from(Page<T> p) {

@@ -36,9 +36,13 @@ public class ApiException extends ErrorResponseException {
      */
     private static ProblemDetail createBody(ErrorCode errorCode) {
         ProblemDetail body = ProblemDetail.forStatus(errorCode.getStatus());
-        body.setProperty("timestamp", OffsetDateTime.now());
+
         body.setTitle(errorCode.name());
         body.setDetail(errorCode.getDefaultMessage());
+        // machine-readable code
+        body.setProperty("code", errorCode.name());
+        body.setProperty("timestamp", OffsetDateTime.now());
+
 
         return body;
     }
