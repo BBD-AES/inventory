@@ -13,12 +13,13 @@ public class StockCommandController {
 
     private final StockCommandService commandService;
 
-    // TODO: implement stock command endpoints (POST/PUT/PATCH).
-    @PatchMapping("/{sku}/{warehouseCode}/location")
+    @PatchMapping("/{warehouseCode}/{sku}/location")
     public StockLocationResponse changeLocation(
             @PathVariable String sku,
             @PathVariable String warehouseCode,
             @Valid @RequestBody UpdateLocationCommand cmd) {
         return commandService.changeLocation(sku, warehouseCode, cmd);
     }
+
+
 }

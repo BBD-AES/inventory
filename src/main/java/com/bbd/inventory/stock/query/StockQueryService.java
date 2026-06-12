@@ -3,6 +3,7 @@ package com.bbd.inventory.stock.query;
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
+import com.bbd.inventory.stock.Stock;
 import com.bbd.inventory.stock.query.dto.*;
 import com.bbd.inventory.warehouse.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +21,10 @@ public class StockQueryService {
     // cross-context read, filter validation only
     private final WarehouseRepository warehouseRepository;
 
-    // TODO: implement stock query operations (list by warehouse, get by sku) with
-    //       @Transactional(readOnly = true), returning StockResponse / PageResponse.
-
 
     // 재고 조회
     @Transactional(readOnly = true)
-    public PageResponse<StockResponse> search(StockSearchCondition cond, Pageable pageable) {
+    public PageResponse<StockListItemResponse> search(StockSearchCondition cond, Pageable pageable) {
 
         if (cond.warehouseCode() != null
                 && !warehouseRepository.existsByCode(cond.warehouseCode())) {
@@ -42,7 +40,7 @@ public class StockQueryService {
                         cond.category(),
                         belowSafety,
                         pageable
-                ).map(StockResponse::from)
+                ).map(StockListItemResponse::from)
         );
     }
 
@@ -74,6 +72,14 @@ public class StockQueryService {
                 kpi.getBelowSafetyCount(),
                 warehouses
         );
+    }
+
+    @Transactional(readOnly = true)
+    public StockDetailResponse getDetail(String sku) {
+        List<Stock> rows = stockQueryRepository.findAllBySku(sku);
+        if (rows.isEmpty()) throw new ApiException(ErrorCode.STOCK_NOT_FOUND);
+
+        return StockDetailResponse.from(rows);
     }
 
 }

@@ -13,6 +13,7 @@ public record StockResponse(
         int currentStock,
         int availableStock,
         int safetyStock,
+        int unitPrice,
         String location,
         Instant updatedAt
 ) {
@@ -26,6 +27,7 @@ public record StockResponse(
                 s.getCurrentStock(),
                 s.getAvailableStock(),
                 s.getSafetyStock(),
+                s.getUnitPrice(),
                 s.getLocation(),
                 s.getUpdatedAt()
         );
