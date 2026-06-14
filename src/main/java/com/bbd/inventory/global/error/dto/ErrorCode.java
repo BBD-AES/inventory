@@ -15,14 +15,16 @@ public enum ErrorCode {
 
     TEST_ERROR(HttpStatus.NOT_FOUND,  "찾을 수 없습니다."),
 
-    WAREHOUSE_NOT_FOUND(HttpStatus.NOT_FOUND,
-            "Warehouse not found"),
+    WAREHOUSE_NOT_FOUND(HttpStatus.NOT_FOUND,"Warehouse not found"),
 
     WAREHOUSE_CODE_DUPLICATE(HttpStatus.CONFLICT, "창고 부품이 존재합니다."),
 
     WAREHOUSE_HAS_STOCK(HttpStatus.CONFLICT,"창고에 물품이 있기 때문에 비활성화가 불가능합니다."),
 
     INVALID_FILTER(HttpStatus.BAD_REQUEST,"Unknown warehouseCode"),
+
+    MOVEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Stock movement not found"),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "'from' must be before or equals to 'to'"),
 
     // 재고 (stock)
     STOCK_NOT_FOUND(HttpStatus.NOT_FOUND, "Stock not found"),
