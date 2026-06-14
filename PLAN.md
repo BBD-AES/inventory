@@ -35,12 +35,15 @@ Consumer group `stock-group`, `auto-offset-reset: earliest` (use `latest` locall
 - **Phase 5** — Testcontainers `StockConsumerIT` (postgres + cp-kafka): in / in-create / price green; **3 stock-out tests `@Disabled`** (shared-partition flakiness).
 - **REST** — dashboard `GET /stocks/summary` (KPIs + per-active-warehouse list); `GET /warehouses` `active`+`type` filters; error `code` + `totalElements`; read-model + path flip (lean `GET /stocks`, per-sku `GET /stocks/{sku}` detail, `/{warehouseCode}/{sku}` single +`unitPrice`).
 - **Audit fixes** — `outbound` movement (was missing `type`/`quantity` → stock-out broken); `StockInRequested.occuredAt`→`occurredAt`; 500 handler logs; removed dead `createStock`/`CreateStockCommand`.
-
-## IN PROGRESS
 - **#11 stock-movement read API** — `GET /api/v1/stock-movements` (filters via `MovementSearchCondition`:
-  `movementType`/`sku`/`warehouseCode`/`from`/`to`/page) + `GET /{id}`. Files: `MovementResponse`,
+  `movementType`/`sku`/`warehouseCode`/`from`/`to`/page, DESC `occurredAt`) + `GET /{id}`. Files: `MovementResponse`,
   `MovementSearchCondition`, `MovementQueryService`, `MovementQueryController`, `StockMovementRepository.search`,
   ErrorCodes `MOVEMENT_NOT_FOUND` + `INVALID_DATE_RANGE`. DTO aligned to contract (type IN/OUT, referenceNumber).
+  ⚠️ Postgres needs `CAST(:from AS Instant)`/`CAST(:to AS Instant)` in the `:param IS NULL` guards — bare
+  timestamp bind params have no type anchor (String/enum params don't). Runtime-verified end-to-end.
+
+## IN PROGRESS
+- (none — all REST endpoints shipped.)
 
 ## REMAINING
 - Re-enable the 3 `@Disabled` `StockConsumerIT` tests — per-test topic isolation (outbound is fixed now).
