@@ -93,6 +93,20 @@ public class Stock {
         this.location = location;
     }
 
+    /**
+     * Internal correction (재고 실사 보정): set currentStock to an absolute target and
+     * shift availableStock by the same delta so reserved (current - available) is preserved.
+     * Returns the signed delta (target - old) for the ADJUST movement row.
+     */
+    public int correctTo(int newCurrentStock) {
+        if (newCurrentStock < 0) throw new ApiException(ErrorCode.VALIDATION_ERROR);
+        int delta = newCurrentStock - this.currentStock;
+        if (this.availableStock + delta < 0) throw new ApiException(ErrorCode.INSUFFICIENT_STOCK);
+        this.currentStock = newCurrentStock;
+        this.availableStock += delta;
+        return delta;
+    }
+
     public void applyIn(int qty) {
         if (qty <= 0) throw new ApiException(ErrorCode.VALIDATION_ERROR);
         this.currentStock += qty;
