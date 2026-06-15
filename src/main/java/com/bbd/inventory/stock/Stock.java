@@ -16,7 +16,12 @@ import java.time.Instant;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "stock")
+@Table(
+        name = "stock",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_stock_warehouse_sku",
+                columnNames = {"warehouse_id", "sku"}
+        ))
 public class Stock {
 
     @Id
