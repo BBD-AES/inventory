@@ -41,16 +41,28 @@ Consumer group `stock-group`, `auto-offset-reset: earliest` (use `latest` locall
   ErrorCodes `MOVEMENT_NOT_FOUND` + `INVALID_DATE_RANGE`. DTO aligned to contract (type IN/OUT, referenceNumber).
   ⚠️ Postgres needs `CAST(:from AS Instant)`/`CAST(:to AS Instant)` in the `:param IS NULL` guards — bare
   timestamp bind params have no type anchor (String/enum params don't). Runtime-verified end-to-end.
+- **#14 `GET /api/v1/warehouses/active`** — non-paged `List<WarehouseResponse>` convenience (UI selectors;
+  partial dup of `GET /warehouses?active=true`). `findByActiveTrueOrderByCodeAsc` + `listActive`. Literal
+  `/active` outranks `/{code}` in Spring path matching (verified). Runtime-verified (3 active, code-ordered).
+- **#15 `PATCH /api/v1/stocks/{warehouseCode}/{sku}`** — internal stock correction (재고 실사 보정).
+  Corrected from spec's unworkable `/warehouses/{sku}/edit` (stock is keyed by warehouse+sku, not sku alone).
+  Sets `currentStock` to an absolute target (preserves reserved = current−available) + records a
+  `StockMovement(type=ADJUST, quantity=signed delta, unitPrice=replica snapshot, referenceNumber=reason)`
+  so the ledger reconciles (Σ IN − Σ OUT + Σ ADJUST = currentStock). New: `MovementType.ADJUST`,
+  `Stock.correctTo`, `AdjustStockCommand`, `StockAdjustResponse`, service `adjust`, controller mapping.
+  Validations + routing + 404 runtime-verified. ⛔ **Happy-path blocked on a pending DB migration** (below).
 
 ## IN PROGRESS
-- (none — all REST endpoints shipped.)
+- (none — all REST endpoints coded. **#15 happy-path needs the `stock_movement_type_check` migration** in
+  GOTCHAS run once per DB before an ADJUST insert succeeds.)
 
 ## REMAINING
 - Re-enable the 3 `@Disabled` `StockConsumerIT` tests — per-test topic isolation (outbound is fixed now).
 - Restore DLT (`DeadLetterPublishingRecoverer`) once `<topic>.DLT` topics are provisioned.
 - Save contract-aligned rewrites of `CONVENTION.md` / `EDA.md` / `STOCK_DETAIL.md` (delivered in chat, not on disk;
   STOCK_DETAIL also needs the path flip).
-- Notion 명세서 edits: drop #15, fix typos #4/#5/#6, swap error examples to ProblemDetail.
+- Notion 명세서 edits: `/warehouses/{sku}/edit` row → repath to `PATCH /stocks/{warehouseCode}/{sku}` (now built);
+  fix typos #4/#5/#6, swap error examples to ProblemDetail. Flip 통신 테스트 for #14/#15 once migration is run.
 - Optional: reconcile batch (`item.unitPrice` vs `stock.unitPrice`; Σ movement vs `currentStock`); Gatling on consumer throughput.
 
 ## GOTCHAS
@@ -59,6 +71,11 @@ Consumer group `stock-group`, `auto-offset-reset: earliest` (use `latest` locall
 - **Shared broker** `kafka.inwoohub.com:9092` is multi-team — `stock-group` + `earliest` replays real history
   (DLT noise). Use `latest` locally.
 - **ddl-auto can't** backfill columns, make partial indexes, or drop/rename — mind schema evolution.
+- ⚠️ **enum CHECK constraint frozen by ddl-auto** — adding `MovementType.ADJUST` left the old
+  `stock_movement_type_check CHECK (type IN ('IN','OUT'))` in place → ADJUST insert 500s. Run once per DB
+  (incl. any deployed DB; no Flyway): `ALTER TABLE stock_movement DROP CONSTRAINT IF EXISTS
+  stock_movement_type_check; ALTER TABLE stock_movement ADD CONSTRAINT stock_movement_type_check
+  CHECK (type IN ('IN','OUT','ADJUST'));`
 - **kafka-ui produce**: paste single-line JSON (a newline inside a string value → JsonParseException).
 - `bootRun` background runs get SIGKILLed periodically (memory) — just restart.
 

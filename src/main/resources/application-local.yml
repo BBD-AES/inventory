@@ -33,20 +33,8 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
 
-  kafka:
-
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka.inwoohub.com:9092}
-    consumer:
-      group-id: stock-group
-      auto-offset-reset: latest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-
-
+# kafka config now in base application.yaml (applies to all profiles);
+# override per-env with KAFKA_BOOTSTRAP / KAFKA_OFFSET_RESET if needed.
 
 # Swagger
 springdoc:
