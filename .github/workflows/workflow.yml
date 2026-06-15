@@ -1,8 +1,19 @@
-name: inventory to Docker Hub
+name: Inventory to Docker Hub and ECR
 
 on:
   push:
     branches: [main]
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  DOCKER_IMAGE_NAME: bbd-inventory
+
+  AWS_REGION: ap-northeast-2
+  AWS_ACCOUNT_ID: "013969386212"
+  ECR_REPOSITORY: bbd-inventory
 
 jobs:
   build-and-push:
@@ -18,10 +29,37 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & Push Docker Image
+      - name: Build & Push Docker Image to Docker Hub
         run: |
           docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/bbd-inventory:latest \
+            --build-arg GITHUB_USERNAME=${{ github.actor }} \
+            --build-arg GITHUB_TOKEN=${{ secrets.GH_PACKAGES_TOKEN }} \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest \
             .
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/bbd-inventory:latest
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push to ECR
+        run: |
+          DOCKERHUB_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          ECR_IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+          docker tag $DOCKERHUB_IMAGE $ECR_IMAGE
+          docker push $ECR_IMAGE
+
+      - name: Trigger infra deploy
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+          repository: BBD-AES/infra
+          event-type: deploy-service
+          client-payload: '{"service":"bbd-inventory","profile":"public"}'
