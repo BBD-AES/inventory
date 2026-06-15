@@ -1,0 +1,85 @@
+package com.bbd.inventory.stock.query;
+
+import com.bbd.inventory.common.PageResponse;
+import com.bbd.inventory.global.error.ApiException;
+import com.bbd.inventory.global.error.dto.ErrorCode;
+import com.bbd.inventory.stock.Stock;
+import com.bbd.inventory.stock.query.dto.*;
+import com.bbd.inventory.warehouse.WarehouseRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class StockQueryService {
+
+    private final StockQueryRepository stockQueryRepository;
+    // cross-context read, filter validation only
+    private final WarehouseRepository warehouseRepository;
+
+
+    // 재고 조회
+    @Transactional(readOnly = true)
+    public PageResponse<StockListItemResponse> search(StockSearchCondition cond, Pageable pageable) {
+
+        if (cond.warehouseCode() != null
+                && !warehouseRepository.existsByCode(cond.warehouseCode())) {
+            throw new ApiException(ErrorCode.INVALID_FILTER);
+        }
+
+        boolean belowSafety = Boolean.TRUE.equals(cond.belowSafety());
+
+        return PageResponse.from(
+                stockQueryRepository.search(
+                        cond.warehouseCode(),
+                        cond.sku(),
+                        cond.category(),
+                        belowSafety,
+                        pageable
+                ).map(StockListItemResponse::from)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public StockResponse getOne(String sku, String warehouseCode) {
+        return stockQueryRepository
+                .findBySkuAndWarehouseCode(sku, warehouseCode)
+                .map(StockResponse::from)
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public StockSummaryResponse summary() {
+        List<WarehouseStockView> warehouse = stockQueryRepository.warehouseStockSummary();
+        StockKpiView kpi = stockQueryRepository.stockKpis();
+
+        List<StockSummaryResponse.WarehouseStock> warehouses = warehouse.stream()
+                .map(v -> new StockSummaryResponse.WarehouseStock(
+                        v.getCode(), v.getName(), v.getType(), true,
+                        v.getSkuCount(), v.getCurrentStock()))
+                .toList();
+
+        return new StockSummaryResponse(
+                warehouseRepository.count(),        // all
+                warehouses.size(),                  // active
+                kpi.getTotalSkus(),
+                kpi.getTotalCurrentStock(),
+                kpi.getTotalAvailableStock(),
+                kpi.getBelowSafetyCount(),
+                warehouses
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public StockDetailResponse getDetail(String sku) {
+        List<Stock> rows = stockQueryRepository.findAllBySku(sku);
+        if (rows.isEmpty()) throw new ApiException(ErrorCode.STOCK_NOT_FOUND);
+
+        return StockDetailResponse.from(rows);
+    }
+
+}

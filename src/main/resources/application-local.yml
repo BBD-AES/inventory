@@ -1,0 +1,70 @@
+server:
+  servlet:
+    context-path: /inventory
+
+spring:
+  application:
+    name: inventory
+
+  threads:
+    virtual:
+      enabled: true # 자바 21 버전을 통해서 이번에 버츄얼 스레드도 한번 써보기
+
+#  datasource:
+#    url: ${DB_ENDPOINT}
+#    username: ${DB_NAME}
+#    password: ${DB_PASSWORD}
+#    driver-class-name: org.postgresql.Driver
+
+  datasource:
+    url: ${DB_ENDPOINT:jdbc:postgresql://localhost:5432/inventory}
+    username: ${DB_NAME:inventory_user}
+    password: ${DB_PASSWORD:inventory_password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        show_sql: false
+        jdbc:
+          time_zone: Asia/Seoul
+
+  kafka:
+
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka.inwoohub.com:9092}
+    consumer:
+      group-id: stock-group
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+
+
+# Swagger
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: alpha
+    config-url: /inventory/v3/api-docs/swagger-config
+    url: /inventory/v3/api-docs
+
+logging:
+  level:
+    com.bbd.inventory: DEBUG
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
+
+items:
+  base-url: http://100.73.142.41/item
+
+
+
+
