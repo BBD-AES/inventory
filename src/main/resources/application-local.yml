@@ -1,4 +1,5 @@
 server:
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /inventory
 
@@ -8,13 +9,7 @@ spring:
 
   threads:
     virtual:
-      enabled: true # 자바 21 버전을 통해서 이번에 버츄얼 스레드도 한번 써보기
-
-#  datasource:
-#    url: ${DB_ENDPOINT}
-#    username: ${DB_NAME}
-#    password: ${DB_PASSWORD}
-#    driver-class-name: org.postgresql.Driver
+      enabled: true
 
   datasource:
     url: ${DB_ENDPOINT:jdbc:postgresql://localhost:5432/inventory}
@@ -33,26 +28,34 @@ spring:
         jdbc:
           time_zone: Asia/Seoul
 
-# kafka config now in base application.yaml (applies to all profiles);
-# override per-env with KAFKA_BOOTSTRAP / KAFKA_OFFSET_RESET if needed.
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.inwoohub.com:9092}
 
-# Swagger
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:stock-group}
+      auto-offset-reset: ${KAFKA_OFFSET_RESET:latest}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: alpha
-    config-url: /inventory/v3/api-docs/swagger-config
     url: /inventory/v3/api-docs
+    config-url: /inventory/v3/api-docs/swagger-config
+
+items:
+  base-url: ${ITEM_SERVICE_BASE_URL:http://bbd-item:8080/item}
 
 logging:
   level:
+    root: info
     com.bbd.inventory: DEBUG
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
     org.apache.kafka: INFO
     org.springframework.kafka: INFO
-
-items:
-  base-url: http://100.73.142.41/item
-
-
-
-
