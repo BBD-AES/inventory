@@ -3,6 +3,30 @@ server:
     context-path: /inventory
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+  http:
+    serviceclient:
+      bbd-user-service:
+        base-url: ${USER_SERVICE_BASE_URL:http://localhost:8081/user}
+      bbd-item-service:
+        base-url: ${ITEM_SERVICE_BASE_URL:http://localhost:8082}
+      bbd-inventory-service:
+        base-url: ${INVENTORY_SERVICE_BASE_URL:http://localhost:8083}
+      bbd-procurement-service:
+        base-url: ${PROCUREMENT_SERVICE_BASE_URL:http://localhost:8084}
+      bbd-sales-service:
+        base-url: ${SALES_SERVICE_BASE_URL:http://localhost:8085}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   application:
     name: inventory
 
@@ -35,6 +59,16 @@ spring:
 
 # kafka config now in base application.yaml (applies to all profiles);
 # override per-env with KAFKA_BOOTSTRAP / KAFKA_OFFSET_RESET if needed.
+
+bbd:
+  security:
+    enabled: true
+    permit-all-paths:
+      - /actuator/health
+      - /actuator/health/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
 
 # Swagger
 springdoc:
