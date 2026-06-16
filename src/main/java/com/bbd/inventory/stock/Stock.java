@@ -56,6 +56,10 @@ public class Stock {
     @Column(nullable = false)
     private int unitPrice;
 
+    @ColumnDefault("true")
+    @Column(nullable = false)
+    private boolean active = true;   // @Getter -> isActive(); mirrors catalog item active flag
+
     @Version
     private Long version;
 

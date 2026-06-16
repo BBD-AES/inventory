@@ -7,7 +7,7 @@ import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
 import com.bbd.inventory.stock.command.dto.StockAdjustResponse;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
-import com.bbd.inventory.stock.event.ItemPriceChanged;
+import com.bbd.inventory.stock.event.ItemChanged;
 import com.bbd.inventory.stock.event.StockInRequested;
 import com.bbd.inventory.stock.event.StockOutRequested;
 import com.bbd.inventory.warehouse.Warehouse;
@@ -137,7 +137,12 @@ public class StockCommandService {
     }
 
     @Transactional
-    public void updateUnitPrice(ItemPriceChanged e) {
-        stockRepository.updateUnitPriceBySku(e.sku(), e.unitPrice());
+    public void updateUnitPrice(String sku, int unitPrice) {
+        stockRepository.updateUnitPriceBySku(sku, unitPrice);
+    }
+
+    @Transactional
+    public void updateActive(String sku, boolean active) {
+        stockRepository.updateActiveBySku(sku, active);
     }
 }
