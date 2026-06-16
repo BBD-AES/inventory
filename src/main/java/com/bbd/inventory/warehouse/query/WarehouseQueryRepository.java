@@ -8,11 +8,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface WarehouseQueryRepository extends JpaRepository<Warehouse, Long> {
 
     Optional<Warehouse> findByCode(String code);
+
+    /** Active warehouses, code-ordered — non-paged convenience list (UI selectors). */
+    List<Warehouse> findByActiveTrueOrderByCodeAsc();
 
     @Query("""
             SELECT w FROM Warehouse w

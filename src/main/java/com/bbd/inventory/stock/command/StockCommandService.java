@@ -3,6 +3,8 @@ package com.bbd.inventory.stock.command;
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
 import com.bbd.inventory.stock.*;
+import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
+import com.bbd.inventory.stock.command.dto.StockAdjustResponse;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
 import com.bbd.inventory.stock.event.ItemPriceChanged;
@@ -38,6 +40,35 @@ public class StockCommandService {
         return new StockLocationResponse(
                 sku, warehouseCode, stock.getLocation(), stock.getUpdatedAt()
         );
+    }
+
+    /**
+     * Internal stock correction: set currentStock to the target and record an ADJUST movement
+     * (signed delta) so the ledger stays consistent (Σ IN − Σ OUT + Σ ADJUST = currentStock).
+     */
+    @Transactional
+    public StockAdjustResponse adjust(
+            String sku, String warehouseCode, AdjustStockCommand cmd) {
+
+        Stock stock = stockRepository.findBySkuAndWarehouseCode(sku, warehouseCode)
+                .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+
+        int delta = stock.correctTo(cmd.currentStock());
+
+        stockMovementRepository.save(StockMovement.builder()
+                .sku(sku)
+                .warehouseCode(warehouseCode)
+                .type(MovementType.ADJUST)
+                .quantity(delta)                       // signed: +/- correction
+                .unitPrice(stock.getUnitPrice())       // current replica price as snapshot
+                .referenceNumber(cmd.referenceNumber())
+                .build());
+
+        stockRepository.flush();
+
+        return new StockAdjustResponse(
+                sku, warehouseCode, stock.getCurrentStock(),
+                stock.getAvailableStock(), delta, stock.getUpdatedAt());
     }
 
     @Transactional

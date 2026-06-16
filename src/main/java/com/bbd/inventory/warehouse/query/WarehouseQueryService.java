@@ -10,11 +10,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class WarehouseQueryService {
 
     private final WarehouseQueryRepository warehouseQueryRepository;
+
+    @Transactional(readOnly = true)
+    public List<WarehouseResponse> listActive() {
+        return warehouseQueryRepository.findByActiveTrueOrderByCodeAsc()
+                .stream().map(WarehouseResponse::from).toList();
+    }
 
     @Transactional(readOnly = true)
     public WarehouseResponse getByCode(String code) {

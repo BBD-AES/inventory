@@ -16,6 +16,15 @@ java {
 
 repositories {
 	mavenCentral()
+
+	maven {
+		name = "GitHubPackages"
+		url = uri("https://maven.pkg.github.com/BBD-AES/bbd-security-core")
+		credentials {
+			username = findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+			password = findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+		}
+	}
 }
 
 dependencies {
@@ -36,6 +45,8 @@ dependencies {
 	//Swagger UI :  http://localhost:8080/swagger-ui/index.html#/
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
 
+	// BBD 공통 인증/인가용 프레임워크
+	implementation 'com.bbd:bbd-security-core:0.0.3'
 
 	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

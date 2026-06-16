@@ -1,20 +1,39 @@
 server:
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /inventory
 
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+  http:
+    serviceclient:
+      bbd-user-service:
+        base-url: ${USER_SERVICE_BASE_URL:http://localhost:8081/user}
+      bbd-item-service:
+        base-url: ${ITEM_SERVICE_BASE_URL:http://localhost:8082}
+      bbd-inventory-service:
+        base-url: ${INVENTORY_SERVICE_BASE_URL:http://localhost:8083}
+      bbd-procurement-service:
+        base-url: ${PROCUREMENT_SERVICE_BASE_URL:http://localhost:8084}
+      bbd-sales-service:
+        base-url: ${SALES_SERVICE_BASE_URL:http://localhost:8085}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
   application:
     name: inventory
 
   threads:
     virtual:
-      enabled: true # 자바 21 버전을 통해서 이번에 버츄얼 스레드도 한번 써보기
-
-#  datasource:
-#    url: ${DB_ENDPOINT}
-#    username: ${DB_NAME}
-#    password: ${DB_PASSWORD}
-#    driver-class-name: org.postgresql.Driver
+      enabled: true
 
   datasource:
     url: ${DB_ENDPOINT:jdbc:postgresql://localhost:5432/inventory}
@@ -34,11 +53,11 @@ spring:
           time_zone: Asia/Seoul
 
   kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.inwoohub.com:9092}
 
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka.inwoohub.com:9092}
     consumer:
-      group-id: stock-group
-      auto-offset-reset: latest
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:stock-group}
+      auto-offset-reset: ${KAFKA_OFFSET_RESET:latest}
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
@@ -46,25 +65,21 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-
-
-# Swagger
 springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: alpha
-    config-url: /inventory/v3/api-docs/swagger-config
     url: /inventory/v3/api-docs
+    config-url: /inventory/v3/api-docs/swagger-config
+
+items:
+  base-url: ${ITEM_SERVICE_BASE_URL:http://bbd-item:8080/item}
 
 logging:
   level:
+    root: info
     com.bbd.inventory: DEBUG
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
     org.apache.kafka: INFO
     org.springframework.kafka: INFO
-
-items:
-  base-url: http://100.73.142.41/item
-
-
-
-

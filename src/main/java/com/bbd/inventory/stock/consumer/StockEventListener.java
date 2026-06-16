@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +24,25 @@ public class StockEventListener {
     private final ProcessedEventRepository processedEventRepository;
     private final StockCommandService stockCommandService;
 
+    /*
+        Idempotency, one transaction per message:
+            1. existsByEventId -> clean fast-path skip for an already-processed event (no exception)
+            2. business work
+            3. save(ProcessedEvent) -> real INSERT (ProcessedEvent) implements persistable, isNew = TRUE)
+     */
+
     @KafkaListener(topics = "sales.stock-out-requested", groupId = "stock-group")
     @Transactional
     public void onStockOut(String message) throws JsonProcessingException {
-
-        StockOutRequested e = objectMapper.readValue(message, StockOutRequested.class);
-
         /*
-            Implements idempotency (멱등성) for kafka message processing.
-            Takes the events UUID to see if it already exists, and if it does halt.
+            Listener becomes claim-first, so the unique PK is the atomic gate
+
+            atomic gate:    fully happened, or didn't happen at all. Gate means only
+                            one thread/process can pass for a given key.
+                            Hence, a single operation that simultaenously checks/records/rejects.
+
          */
+        StockOutRequested e = objectMapper.readValue(message, StockOutRequested.class);
         if (processedEventRepository.existsByEventId(e.eventId())) return;
 
         stockCommandService.outbound(e);
@@ -61,4 +71,5 @@ public class StockEventListener {
         stockCommandService.updateUnitPrice(e);
         processedEventRepository.save(new ProcessedEvent(e.eventId()));
     }
+
 }
