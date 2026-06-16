@@ -1,5 +1,6 @@
 package com.bbd.inventory.stock.command;
 
+import com.bbd.inventory.common.IdempotencyStore;
 import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
 import com.bbd.inventory.stock.command.dto.StockAdjustResponse;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
@@ -14,13 +15,16 @@ import org.springframework.web.bind.annotation.*;
 public class StockCommandController {
 
     private final StockCommandService commandService;
+    private final IdempotencyStore idempotencyStore;
 
     @PatchMapping("/{warehouseCode}/{sku}/location")
     public StockLocationResponse changeLocation(
             @PathVariable String sku,
             @PathVariable String warehouseCode,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @Valid @RequestBody UpdateLocationCommand cmd) {
-        return commandService.changeLocation(sku, warehouseCode, cmd);
+
+        return idempotencyStore.execute(key, () -> commandService.changeLocation(sku, warehouseCode, cmd));
     }
 
     // 내부적인 재고 수정 (실사 보정) — corrected from spec's /warehouses/{sku}/edit,
@@ -29,8 +33,11 @@ public class StockCommandController {
     public StockAdjustResponse adjust(
             @PathVariable String warehouseCode,
             @PathVariable String sku,
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @Valid @RequestBody AdjustStockCommand cmd) {
-        return commandService.adjust(sku, warehouseCode, cmd);
+
+
+        return idempotencyStore.execute(key, () -> commandService.adjust(sku, warehouseCode, cmd));
     }
 
 }
