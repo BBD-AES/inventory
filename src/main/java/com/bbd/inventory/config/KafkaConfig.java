@@ -1,10 +1,13 @@
 package com.bbd.inventory.config;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
+
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
@@ -27,10 +30,18 @@ public class KafkaConfig {
      */
     @Bean
     public DefaultErrorHandler errorHandler(KafkaTemplate<String, String> template) {
-        return new DefaultErrorHandler(
-                // failed msg -> <topic>.DLT
-//                new DeadLetterPublishingRecoverer(template),
+
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
+                template,
+        (record, ex) -> new TopicPartition(record.topic() + ".DLT", 0));
+
+        DefaultErrorHandler handler = new DefaultErrorHandler(
+                recoverer,
                 // retry 2x @ 1s
                 new FixedBackOff(1000L, 2));
+
+        handler.addNotRetryableExceptions(JsonProcessingException.class);
+
+        return handler;
     }
 }
