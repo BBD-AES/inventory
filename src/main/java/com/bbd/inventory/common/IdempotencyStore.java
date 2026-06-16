@@ -1,12 +1,11 @@
 package com.bbd.inventory.common;
 
-import org.apache.logging.log4j.util.Supplier;
+
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.springframework.jdbc.datasource.init.DatabasePopulatorUtils.execute;
+import java.util.function.Supplier;
 
 @Component
 public class IdempotencyStore {
