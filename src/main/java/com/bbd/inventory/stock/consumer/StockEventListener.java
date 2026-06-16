@@ -3,14 +3,13 @@ package com.bbd.inventory.stock.consumer;
 import com.bbd.inventory.common.ProcessedEvent;
 import com.bbd.inventory.common.ProcessedEventRepository;
 import com.bbd.inventory.stock.command.StockCommandService;
-import com.bbd.inventory.stock.event.ItemPriceChanged;
+import com.bbd.inventory.stock.event.ItemChanged;
 import com.bbd.inventory.stock.event.StockInRequested;
 import com.bbd.inventory.stock.event.StockOutRequested;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,14 +60,25 @@ public class StockEventListener {
         processedEventRepository.save(new ProcessedEvent(e.eventId()));
     }
 
-    @KafkaListener(topics = "item.price-changed", groupId = "stock-group")
+    @KafkaListener(topics = "item.changed", groupId = "stock-group")
     @Transactional
-    public void onPriceChanged(String message) throws JsonProcessingException {
-        ItemPriceChanged e = objectMapper.readValue(message, ItemPriceChanged.class);
+    public void onItemChanged(String message) throws JsonProcessingException {
+        ItemChanged e = objectMapper.readValue(message, ItemChanged.class);
 
         if (processedEventRepository.existsByEventId(e.eventId())) return;
 
-        stockCommandService.updateUnitPrice(e);
+        switch (e.eventType()) {
+            case "ITEM_PRICE_CHANGED" -> {
+                if (e.unitPrice() != null) stockCommandService.updateUnitPrice(e.sku(), e.unitPrice());
+                else log.warn("ITEM_PRICE_CHANGED missing unitPrice, sku={}", e.sku());
+            }
+            case "ITEM_ACTIVE_CHANGED" -> {
+                if (e.active() != null) stockCommandService.updateActive(e.sku(), e.active());
+                else log.warn("ITEM_ACTIVE_CHANGED missing active flag, sku={}", e.sku());
+            }
+            default -> log.warn("unknown item eventType: {}", e.eventType());
+        }
+
         processedEventRepository.save(new ProcessedEvent(e.eventId()));
     }
 

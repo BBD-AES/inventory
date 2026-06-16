@@ -1,10 +1,12 @@
 package com.bbd.inventory.stock.event;
 
-public record ItemPriceChanged(
+public record ItemChanged(
         String eventId,
         String source,
         String eventType,
         String occurredAt,
         String sku,
-        int unitPrice) {}
+        Integer unitPrice,              // boxed - null on ACTIVE events
+        Boolean active
+) {}
 

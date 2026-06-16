@@ -44,4 +44,13 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     int updateUnitPriceBySku(@Param("sku") String sku,
                              @Param("unitPrice") int unitPrice);
 
+    @Modifying
+    @Query("""
+            UPDATE Stock s 
+            SET s.active = :active 
+            WHERE s.sku = :sku
+            """)
+    int updateActiveBySku(@Param("sku") String sku,
+                          @Param("active") boolean active);
+
 }
