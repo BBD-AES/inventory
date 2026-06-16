@@ -2,8 +2,8 @@ package com.bbd.inventory.stock.query;
 
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.stock.query.dto.*;
-import com.bbd.securitycore.adapter.in.annotation.RequireRole;
-import com.bbd.securitycore.domain.UserRole;
+//import com.bbd.securitycore.adapter.in.annotation.RequireRole;
+//import com.bbd.securitycore.domain.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;

@@ -1,5 +1,6 @@
 package com.bbd.inventory.warehouse.command;
 
+import com.bbd.inventory.common.IdempotencyStore;
 import com.bbd.inventory.warehouse.command.dto.CreateWarehouseCommand;
 import com.bbd.inventory.warehouse.command.dto.UpdateWarehouseCommand;
 import jakarta.validation.Valid;
@@ -13,11 +14,16 @@ import org.springframework.web.bind.annotation.*;
 public class WarehouseCommandController {
 
     private final WarehouseCommandService commandService;
+    private final IdempotencyStore idempotencyStore;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public String create(@Valid @RequestBody CreateWarehouseCommand cmd) {
-        return commandService.create(cmd);
+    public String create(
+            @Valid
+            @RequestHeader(value = "Idempotency-Key", required = false) String key,
+            @RequestBody CreateWarehouseCommand cmd) {
+
+        return idempotencyStore.execute(key, () -> commandService.create(cmd));
     }
 
     @PutMapping("/{code}")
@@ -29,13 +35,16 @@ public class WarehouseCommandController {
 
     @PatchMapping("/{code}/activate")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void activate(@PathVariable String code) {
+    public void activate(@PathVariable String code,
+                         @RequestHeader(value = "Idempotency-Key", required = false) String key) {
+
         commandService.activate(code);
     }
 
     @PatchMapping("/{code}/deactivate")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deactivate(@PathVariable String code) {
+    public void deactivate(@PathVariable String code,
+                           @RequestHeader(value = "Idempotency-Key", required = false) String key) {
         commandService.deactivate(code);
     }
 }
