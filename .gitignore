@@ -47,3 +47,7 @@ src/docker-compose.yml
 ### macOS ###
 .DS_Store
 ._*
+
+
+### .env
+.env
