@@ -5,11 +5,12 @@ import com.bbd.inventory.stock.query.dto.MovementResponse;
 import com.bbd.inventory.stock.query.dto.MovementSearchCondition;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.print.Pageable;
+
 
 @RestController
 @RequestMapping("/api/v1/stock-movements")
