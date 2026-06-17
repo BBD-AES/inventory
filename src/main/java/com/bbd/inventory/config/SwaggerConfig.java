@@ -23,24 +23,44 @@ public class SwaggerConfig {
                         .version("v1.0"))
 
                 .addServersItem(new Server()
-                        .url("http://localhost:8083/inventory")
-                        .description("Local Direct"))
+                        .url("http://localhost:8080/inventory")
+                        .description("로컬 스웨거")
+                )
 
                 .addServersItem(new Server()
-                        .url("http://localhost:8080")
-                        .description("Local Local"))
+                        .url("http://192.168.200.220/inventory")
+                        .description("강의실 노트북")
+                )
 
                 .addServersItem(new Server()
-                        .url("http://192.168.201.110/inventory")
-                        .description("Nginx"))
+                        .url("http://bbd.inwoohub.com/inventory")
+                        .description("ECS Swagger")
+                )
 
                 .addServersItem(new Server()
-                        .url("http://100.73.142.41:8083/inventory")
-                        .description("bbd tailscale"))
+                        .url("http://100.73.142.41/inventory")
+                        .description("TailScale 강의실 노트북")
+                )
 
-                .addServersItem(new Server()
-                        .url("http://112.218.95.58/inventory")
-                        .description("External Nginx"))
+//                .addServersItem(new Server()
+//                        .url("http://localhost:8083/inventory")
+//                        .description("Local Direct"))
+//
+//                .addServersItem(new Server()
+//                        .url("http://localhost:8080")
+//                        .description("Local Local"))
+//
+//                .addServersItem(new Server()
+//                        .url("http://192.168.201.110/inventory")
+//                        .description("Nginx"))
+//
+//                .addServersItem(new Server()
+//                        .url("http://100.73.142.41:8083/inventory")
+//                        .description("bbd tailscale"))
+//
+//                .addServersItem(new Server()
+//                        .url("http://112.218.95.58/inventory")
+//                        .description("External Nginx"))
 
                 .components(new Components()
                         .addSecuritySchemes(BEARER_AUTH, new SecurityScheme()
