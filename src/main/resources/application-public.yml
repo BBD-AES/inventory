@@ -40,6 +40,12 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
 # Swagger
 springdoc:
   swagger-ui:
@@ -50,6 +56,33 @@ springdoc:
 
 items:
   base-url: ${ITEM_SERVICE_BASE_URL:http://item:8080/item}
+
+security:
+  http:
+    serviceclient:
+      bbd-user-service:
+        base-url: ${USER_SERVICE_BASE_URL:http://localhost:8081/user}
+      bbd-item-service:
+        base-url: ${ITEM_SERVICE_BASE_URL:http://localhost:8082/item}
+      bbd-inventory-service:
+        base-url: ${INVENTORY_SERVICE_BASE_URL:http://localhost:8083/inventory}
+      bbd-procurement-service:
+        base-url: ${PROCUREMENT_SERVICE_BASE_URL:http://localhost:8084/procurement}
+      bbd-sales-service:
+        base-url: ${SALES_SERVICE_BASE_URL:http://localhost:8085/sales}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+bbd:
+  security:
+    enabled: true
+    permit-all-paths:
+      - /actuator/health
+      - /actuator/health/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
 
 logging:
   level:

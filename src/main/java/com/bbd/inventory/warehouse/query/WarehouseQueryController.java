@@ -3,8 +3,8 @@ package com.bbd.inventory.warehouse.query;
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.warehouse.WarehouseType;
 import com.bbd.inventory.warehouse.query.dto.WarehouseResponse;
-//import com.bbd.securitycore.adapter.in.annotation.RequireRole;
-//import com.bbd.securitycore.domain.UserRole;
+import com.bbd.securitycore.adapter.in.annotation.RequireRole;
+import com.bbd.securitycore.domain.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +29,7 @@ public class WarehouseQueryController {
         return queryService.getByCode(code);
     }
 
-//    @RequireRole(UserRole.BRANCH_MANAGER)
+    @RequireRole(UserRole.BRANCH_MANAGER)
     @GetMapping
     public PageResponse<WarehouseResponse> list(
             @RequestParam(required = false) Boolean active,
