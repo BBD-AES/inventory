@@ -89,5 +89,6 @@ bbd:
 logging:
   level:
     root: info
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
+    com.bbd.inventory: DEBUG
+    org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: warn

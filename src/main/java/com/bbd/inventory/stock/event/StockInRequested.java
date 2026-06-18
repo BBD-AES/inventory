@@ -8,7 +8,7 @@ public record StockInRequested(
         String eventType,
         String occurredAt,
         String poNumber,
-        String soId,
+        String soNumber,
         List<Line> lines) {
 
     public record Line(

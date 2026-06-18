@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/stocks")
 @RequiredArgsConstructor
@@ -42,4 +44,8 @@ public class StockQueryController {
         return queryService.getDetail(sku);
     }
 
+    @GetMapping("/availability")
+    public List<AvailabilityResponse> availability(@RequestParam List<String> sku) {
+        return queryService.availability(sku);
+    }
 }

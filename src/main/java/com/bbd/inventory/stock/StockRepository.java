@@ -1,7 +1,9 @@
 package com.bbd.inventory.stock;
 
 import com.bbd.inventory.warehouse.Warehouse;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +28,15 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
             WHERE s.sku = :sku AND s.warehouse.code = :warehouseCode
             """)
     Optional<Stock> findBySkuAndWarehouseCode(
+            @Param("sku") String sku,
+            @Param("warehouseCode") String warehouseCode);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT s FROM Stock s
+            WHERE s.sku = :sku AND s.warehouse.code = :warehouseCode
+            """)
+    Optional<Stock> findForUpdate(
             @Param("sku") String sku,
             @Param("warehouseCode") String warehouseCode);
 

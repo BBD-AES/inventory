@@ -82,4 +82,14 @@ public class StockQueryService {
         return StockDetailResponse.from(rows);
     }
 
+    /*
+        gets the list of available skus in a list.
+     */
+    @Transactional(readOnly = true)
+    public List<AvailabilityResponse> availability(List<String> skus) {
+        return skus.stream()
+                .map(sku -> AvailabilityResponse.from(sku, stockQueryRepository.findAllBySku(sku)))
+                .toList();
+    }
+
 }

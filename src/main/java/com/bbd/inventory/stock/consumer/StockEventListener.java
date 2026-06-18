@@ -41,21 +41,21 @@ public class StockEventListener {
         stockCommandService.inbound(e);
 
         // SO-linked inbound only -> echo a replenish notification to sales
-        if (e.soId() != null && !e.soId().isBlank()) {
+        if (e.soNumber() != null && !e.soNumber().isBlank()) {
             String eventId = UUID.randomUUID().toString();
             StockReplenished out = new StockReplenished(
                     eventId,
                     "inventory",
                     "STOCK_REPLENISHED",
                     Instant.now().toString(),
-                    e.soId(),
+                    e.soNumber(),
                     e.lines().stream()
                             .map(l -> new StockReplenished.Line(
                                     l.sku(), l.quantity(), l.warehouseCode())).toList()
             );
 
             outboxRecorder.record("inventory.stock-replenished",
-                    e.soId(), eventId, out);
+                    e.soNumber(), eventId, out);
         }
 
         processedEventRepository.save(new ProcessedEvent(e.eventId()));

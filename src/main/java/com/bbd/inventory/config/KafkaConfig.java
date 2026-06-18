@@ -1,6 +1,6 @@
 package com.bbd.inventory.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JacksonException;
 
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
@@ -43,7 +43,7 @@ public class KafkaConfig {
                 // retry 2x @ 1s
                 new FixedBackOff(1000L, 2));
 
-        handler.addNotRetryableExceptions(JsonProcessingException.class);
+        handler.addNotRetryableExceptions(JacksonException.class);
 
         return handler;
     }

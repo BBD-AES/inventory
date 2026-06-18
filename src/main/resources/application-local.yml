@@ -93,7 +93,7 @@ logging:
   level:
     root: info
     com.bbd.inventory: DEBUG
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: warn
     org.apache.kafka: INFO
     org.springframework.kafka: INFO

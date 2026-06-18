@@ -133,5 +133,36 @@ public class Stock {
         this.unitPrice = unitPrice;
     }
 
+    /*
+        Reserve:    lower avilableStock by up to qty (curr stock unchanged)
+                    Returns granted amount
+     */
+    public int reserve(int qty) {
+        if (qty <= 0) throw new ApiException(ErrorCode.VALIDATION_ERROR);
+        int grant = Math.min(qty, this.availableStock); // always satisfies, or gives most.
+
+        this.availableStock -= grant;
+        return grant;
+    }
+
+    /*
+        Release:    give reserved units back to availableStock (curr stock unchanged)
+     */
+    public void release(int qty) {
+        if (qty <= 0) throw new ApiException(ErrorCode.VALIDATION_ERROR);
+
+        this.availableStock += qty;
+    }
+
+    /*
+        Issue:      physical out. avilableStock was already lowered at reserve, so only
+                    currentStock drops
+     */
+    public void issue(int qty) {
+        if (qty <= 0) throw new ApiException(ErrorCode.VALIDATION_ERROR);
+        if (this.currentStock < qty) throw new ApiException(ErrorCode.INSUFFICIENT_STOCK);
+
+        this.currentStock -= qty;
+    }
 }
 

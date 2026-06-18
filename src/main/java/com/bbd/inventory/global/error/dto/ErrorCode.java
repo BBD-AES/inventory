@@ -78,6 +78,11 @@ public enum ErrorCode {
             "재고가 부족합니다."
     ),
 
+    RESERVATION_NOT_FOUND(
+            HttpStatus.NOT_FOUND,
+            "예약 내역을 찾을 수 없습니다."
+    ),
+
     // 멱등성 (Idempotency)
     IDEMPOTENCY_KEY_REQUIRED(
             HttpStatus.BAD_REQUEST,
