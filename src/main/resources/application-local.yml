@@ -4,14 +4,18 @@ server:
     context-path: /inventory
 
 spring:
+  application:
+    name: inventory
+  config:
+    import: optional:file:.env[.properties]
+  threads:
+    virtual:
+      enabled: true
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI}
-  config:
-    import: optional:file:.env[.properties]
-
   http:
     serviceclient:
       bbd-user-service:
@@ -24,35 +28,15 @@ spring:
         base-url: ${PROCUREMENT_SERVICE_BASE_URL:http://localhost:8084}
       bbd-sales-service:
         base-url: ${SALES_SERVICE_BASE_URL:http://localhost:8085}
-
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-
-bbd:
-  security:
-    enabled: true
-    permit-all-paths:
-      - /actuator/health
-      - /actuator/health/**
-      - /swagger-ui/**
-      - /swagger-ui.html
-      - /v3/api-docs/**
-
-  application:
-    name: inventory
-
-  threads:
-    virtual:
-      enabled: true
-
   datasource:
     url: ${DB_ENDPOINT}
     username: ${DB_NAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -63,21 +47,26 @@ bbd:
         show_sql: false
         jdbc:
           time_zone: Asia/Seoul
-
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.inwoohub.com:9092}
-
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID:stock-group}
       auto-offset-reset: ${KAFKA_OFFSET_RESET:latest}
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-
+bbd:
+  security:
+    enabled: true
+    permit-all-paths:
+      - /actuator/health
+      - /actuator/health/**
+      - /swagger-ui/**
+      - /swagger-ui.html
+      - /v3/api-docs/**
 
 springdoc:
   swagger-ui:
