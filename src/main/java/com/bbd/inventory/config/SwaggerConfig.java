@@ -42,26 +42,6 @@ public class SwaggerConfig {
                         .description("TailScale 강의실 노트북")
                 )
 
-//                .addServersItem(new Server()
-//                        .url("http://localhost:8083/inventory")
-//                        .description("Local Direct"))
-//
-//                .addServersItem(new Server()
-//                        .url("http://localhost:8080")
-//                        .description("Local Local"))
-//
-//                .addServersItem(new Server()
-//                        .url("http://192.168.201.110/inventory")
-//                        .description("Nginx"))
-//
-//                .addServersItem(new Server()
-//                        .url("http://100.73.142.41:8083/inventory")
-//                        .description("bbd tailscale"))
-//
-//                .addServersItem(new Server()
-//                        .url("http://112.218.95.58/inventory")
-//                        .description("External Nginx"))
-
                 .components(new Components()
                         .addSecuritySchemes(BEARER_AUTH, new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)

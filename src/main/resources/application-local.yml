@@ -48,9 +48,9 @@ bbd:
       enabled: true
 
   datasource:
-    url: ${DB_ENDPOINT:jdbc:postgresql://localhost:5432/inventory}
-    username: ${DB_NAME:inventory_user}
-    password: ${DB_PASSWORD:inventory_password}
+    url: ${DB_ENDPOINT}
+    username: ${DB_NAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
