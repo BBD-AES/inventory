@@ -40,6 +40,9 @@ public class OutboxEvent {
 
     private Instant sentAt;     // null until relay sends
 
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private int attempts;
+
     @Builder
     public OutboxEvent(String eventId, String topic, String msgKey, String payload) {
         this.eventId = eventId;
@@ -53,4 +56,8 @@ public class OutboxEvent {
         this.outboxStatus = OutboxStatus.SENT;
         this.sentAt = Instant.now();
     }
+
+    public void markFailed() { this.outboxStatus = OutboxStatus.FAILED; }
+    public void bumpAttempt() { this.attempts++; }
+
 }

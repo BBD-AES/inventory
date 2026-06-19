@@ -38,7 +38,7 @@ public class StockReservation {
     @Column(nullable = false) private int quantity;
 
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 10)
-    private ReservationStatus status;
+    private ReservationStatus status = ReservationStatus.RESERVED;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

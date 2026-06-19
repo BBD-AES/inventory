@@ -28,7 +28,7 @@ public class StockCommandService {
     public StockLocationResponse changeLocation(
             String sku, String warehouseCode, UpdateLocationCommand cmd) {
 
-        Stock stock = stockRepository.findBySkuAndWarehouseCode(sku, warehouseCode)
+        Stock stock = stockRepository.findForUpdate(sku, warehouseCode)
                 .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
 
         // entity method; dirty-checked, no movement
@@ -49,7 +49,7 @@ public class StockCommandService {
     public StockAdjustResponse adjust(
             String sku, String warehouseCode, AdjustStockCommand cmd) {
 
-        Stock stock = stockRepository.findBySkuAndWarehouseCode(sku, warehouseCode)
+        Stock stock = stockRepository.findForUpdate(sku, warehouseCode)
                 .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
 
         int delta = stock.correctTo(cmd.currentStock());
@@ -74,7 +74,7 @@ public class StockCommandService {
     public void outbound(StockOutRequested e) {
         // for each outbound lines
         for (StockOutRequested.Line line : e.lines()) {
-            Stock stock = stockRepository.findBySkuAndWarehouseCode(line.sku(), line.warehouseCode())
+            Stock stock = stockRepository.findForUpdate(line.sku(), line.warehouseCode())
                     .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
 
             stock.applyOut(line.quantity());
@@ -97,7 +97,7 @@ public class StockCommandService {
     public void inbound(StockInRequested e) {
 
         for (StockInRequested.Line line : e.lines()) {
-            Stock stock = stockRepository.findBySkuAndWarehouseCode(line.sku(), line.warehouseCode())
+            Stock stock = stockRepository.findForUpdate(line.sku(), line.warehouseCode())
                     .orElseGet(() -> createForInbound(line));
 
             stock.applyIn(line.quantity());

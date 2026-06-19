@@ -19,9 +19,8 @@ public class WarehouseCommandController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String create(
-            @Valid
             @RequestHeader(value = "Idempotency-Key", required = false) String key,
-            @RequestBody CreateWarehouseCommand cmd) {
+            @Valid @RequestBody CreateWarehouseCommand cmd) {
 
         return idempotencyStore.execute(key, () -> commandService.create(cmd));
     }

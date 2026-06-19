@@ -1,6 +1,5 @@
 package com.bbd.inventory.stock.consumer;
 
-import com.bbd.inventory.common.ProcessedEvent;
 import com.bbd.inventory.common.ProcessedEventRepository;
 import com.bbd.inventory.outbox.OutboxRecorder;
 import com.bbd.inventory.stock.command.StockCommandService;
@@ -36,7 +35,7 @@ public class StockEventListener {
 
         StockInRequested e = objectMapper.readValue(message, StockInRequested.class);
 
-        if (processedEventRepository.existsByEventId(e.eventId())) return;
+        if (processedEventRepository.claim(e.eventId()) == 0) return;   // already processed
 
         stockCommandService.inbound(e);
 
@@ -57,33 +56,23 @@ public class StockEventListener {
             outboxRecorder.record("inventory.stock-replenished",
                     e.soId(), eventId, out);
         }
-
-        processedEventRepository.save(new ProcessedEvent(e.eventId()));
     }
 
     /*
-        Idempotency, one transaction per message:
-            1. existsByEventId -> clean fast-path skip for an already-processed event (no exception)
+        Claim-first idempotency, one transaction per message:
+            1. claim(eventId) -> atomic INSERT ... ON CONFLICT DO NOTHING; the unique PK is the gate
+                                 1 = first time (proceed), 0 = duplicate (skip)
             2. business work
-            3. save(ProcessedEvent) -> real INSERT (ProcessedEvent) implements persistable, isNew = TRUE)
+        Same tx: rollback un-claims, so a failed message is reprocessable.
      */
 
     @KafkaListener(topics = "sales.stock-out-requested", groupId = "stock-group")
     @Transactional
     public void onStockOut(String message) {
-        /*
-            Listener becomes claim-first, so the unique PK is the atomic gate
-
-            atomic gate:    fully happened, or didn't happen at all. Gate means only
-                            one thread/process can pass for a given key.
-                            Hence, a single operation that simultaenously checks/records/rejects.
-
-         */
         StockOutRequested e = objectMapper.readValue(message, StockOutRequested.class);
-        if (processedEventRepository.existsByEventId(e.eventId())) return;
+        if (processedEventRepository.claim(e.eventId()) == 0) return;   // already processed
 
         stockCommandService.outbound(e);
-        processedEventRepository.save(new ProcessedEvent(e.eventId()));
     }
 
     @KafkaListener(topics = "item.changed", groupId = "stock-group")
@@ -91,7 +80,7 @@ public class StockEventListener {
     public void onItemChanged(String message) {
         ItemChanged e = objectMapper.readValue(message, ItemChanged.class);
 
-        if (processedEventRepository.existsByEventId(e.eventId())) return;
+        if (processedEventRepository.claim(e.eventId()) == 0) return;   // already processed
 
         switch (e.eventType()) {
             case "ITEM_PRICE_CHANGED" -> {
@@ -104,8 +93,6 @@ public class StockEventListener {
             }
             default -> log.warn("unknown item eventType: {}", e.eventType());
         }
-
-        processedEventRepository.save(new ProcessedEvent(e.eventId()));
     }
 
 }

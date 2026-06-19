@@ -1,6 +1,6 @@
 package com.bbd.inventory.stock.client;
 
-import com.bbd.inventory.global.error.ApiException;
+import com.bbd.inventory.global.error.TransientServiceException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
 import com.bbd.inventory.stock.ItemClient;
 import com.bbd.inventory.stock.ItemInfo;
@@ -36,8 +36,8 @@ public class RestItemClient implements ItemClient {
         } catch (HttpClientErrorException.NotFound e) {
             return Optional.empty();
         } catch (RestClientException e) {
-            // catalog 5xx / timeout / connection refused -> not our 500
-            throw new ApiException(ErrorCode.ITEM_SERVICE_UNAVAILABLE);
+            // catalog 5xx / timeout / connection refused -> transient, retryable
+            throw new TransientServiceException(ErrorCode.ITEM_SERVICE_UNAVAILABLE);
         }
     }
 

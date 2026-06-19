@@ -1,6 +1,6 @@
 package com.bbd.inventory.config;
 
-import com.fasterxml.jackson.core.JacksonException;
+import tools.jackson.core.JacksonException;
 
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
