@@ -57,7 +57,7 @@ springdoc:
     config-url: /inventory/v3/api-docs/swagger-config
 
 items:
-  base-url: ${ITEM_SERVICE_BASE_URL:http://item:8080/item}
+  base-url: ${ITEM_SERVICE_BASE_URL:http://192.168.200.220/item}
 
 security:
   http:
