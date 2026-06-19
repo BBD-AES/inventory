@@ -1,5 +1,7 @@
 package com.bbd.inventory.config;
 
+import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.KafkaAdmin;
 import tools.jackson.core.JacksonException;
 
 import org.apache.kafka.common.TopicPartition;
@@ -46,5 +48,18 @@ public class KafkaConfig {
         handler.addNotRetryableExceptions(JacksonException.class);
 
         return handler;
+    }
+
+    @Bean
+    public KafkaAdmin.NewTopics dltTopics() {
+        return new KafkaAdmin.NewTopics(
+                TopicBuilder.name("sales.stock-out-requested.DLT")
+                        .partitions(1)
+                        .build(),
+
+                TopicBuilder.name("item.changed.DLT")
+                        .partitions(1)
+                        .build()
+        );
     }
 }
