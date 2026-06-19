@@ -53,7 +53,7 @@ public class KafkaConfig {
     @Bean
     public KafkaAdmin.NewTopics dltTopics() {
         return new KafkaAdmin.NewTopics(
-                TopicBuilder.name("sales.stock-out-requested.DLT")
+                TopicBuilder.name("sales.stock-out-received.DLT")
                         .partitions(1)
                         .build(),
 

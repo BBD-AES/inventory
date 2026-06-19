@@ -4,10 +4,11 @@ import com.bbd.inventory.common.ProcessedEventRepository;
 import com.bbd.inventory.outbox.OutboxRecorder;
 import com.bbd.inventory.stock.command.StockCommandService;
 import com.bbd.inventory.stock.event.ItemChanged;
+import com.bbd.inventory.stock.event.SalesOrderReceived;
 import com.bbd.inventory.stock.event.StockInRequested;
-import com.bbd.inventory.stock.event.StockOutRequested;
 
 import com.bbd.inventory.stock.event.StockReplenished;
+import com.bbd.inventory.stock.reservation.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -27,6 +28,7 @@ public class StockEventListener {
     private final ProcessedEventRepository processedEventRepository;
     private final StockCommandService stockCommandService;
     private final OutboxRecorder outboxRecorder;
+    private final ReservationService reservationService;
 
 
     @KafkaListener(topics = "procurement.stock-in-requested", groupId = "stock-group")
@@ -64,16 +66,21 @@ public class StockEventListener {
                                  1 = first time (proceed), 0 = duplicate (skip)
             2. business work
         Same tx: rollback un-claims, so a failed message is reprocessable.
+
+        Replaces sales.stock-out-requested: sales sends only soNumber, inventory
+        resolves the RESERVED rows itself and issues them (reserved -> shipped).
+        Double-idempotent: claim(eventId) blocks redelivery, issue() skips non-RESERVED rows.
      */
 
-    @KafkaListener(topics = "sales.stock-out-requested", groupId = "stock-group")
+    @KafkaListener(topics = "sales.order.received", groupId = "stock-group")
     @Transactional
-    public void onStockOut(String message) {
-        StockOutRequested e = objectMapper.readValue(message, StockOutRequested.class);
+    public void onSalesOrderReceived(String message) {
+        SalesOrderReceived e = objectMapper.readValue(message, SalesOrderReceived.class);
         if (processedEventRepository.claim(e.eventId()) == 0) return;   // already processed
 
-        stockCommandService.outbound(e);
+        reservationService.issue(e.soNumber());
     }
+
 
     @KafkaListener(topics = "item.changed", groupId = "stock-group")
     @Transactional
