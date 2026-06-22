@@ -1,7 +1,9 @@
 package com.bbd.inventory.stock.query;
 
 import com.bbd.inventory.stock.Stock;
+import com.bbd.inventory.stock.query.dto.SafetyShortageView;
 import com.bbd.inventory.stock.query.dto.StockKpiView;
+import com.bbd.inventory.stock.query.dto.WarehouseAvailabilityView;
 import com.bbd.inventory.stock.query.dto.WarehouseStockView;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -94,5 +96,35 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
             """)
     List<Stock> findAllBySku(@Param("sku") String sku);
 
+    /**
+     * Dashboard (#41) — rows below safety on the available axis (availableStock < safetyStock).
+     * shortage = safetyStock - availableStock computed in SQL so the read returns ready-to-render.
+     */
+    @Query("""
+            SELECT s.sku AS sku, w.code AS warehouseCode,
+                s.currentStock AS currentStock,
+                s.availableStock AS availableStock,
+                s.safetyStock AS safetyStock,
+                (s.safetyStock - s.availableStock) AS shortage
+            FROM Stock s JOIN s.warehouse w
+            WHERE s.availableStock < s.safetyStock
+            ORDER BY (s.safetyStock - s.availableStock) DESC, w.code, s.sku
+            """)
+    List<SafetyShortageView> safetyShortages();
+
+    /**
+     * Dashboard (#41) — per-warehouse available-stock sum and below-safety SKU count
+     * (availableStock < safetyStock). Grouped in SQL so no per-row work in the service.
+     */
+    @Query("""
+            SELECT w.code AS warehouseCode,
+                COALESCE(SUM(s.availableStock), 0) AS availableSum,
+                SUM(CASE WHEN s.availableStock < s.safetyStock
+                            THEN 1 ELSE 0 END) AS shortageCount
+            FROM Stock s JOIN s.warehouse w
+            GROUP BY w.code
+            ORDER BY w.code
+            """)
+    List<WarehouseAvailabilityView> warehouseAvailability();
 
 }

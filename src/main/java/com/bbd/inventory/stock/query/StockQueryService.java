@@ -74,6 +74,33 @@ public class StockQueryService {
         );
     }
 
+    /**
+     * Dashboard aggregation (#41): safety-stock shortages (availableStock < safetyStock)
+     * plus per-warehouse available-stock sum and below-safety SKU count. Two grouped/filtered
+     * queries, no per-row work here.
+     */
+    @Transactional(readOnly = true)
+    public StockStatsResponse stats() {
+        List<SafetyShortageView> shortages = stockQueryRepository.safetyShortages();
+        List<WarehouseAvailabilityView> byWarehouse = stockQueryRepository.warehouseAvailability();
+
+        List<StockStatsResponse.SafetyShortage.Item> items = shortages.stream()
+                .map(v -> new StockStatsResponse.SafetyShortage.Item(
+                        v.getSku(), v.getWarehouseCode(), v.getCurrentStock(),
+                        v.getAvailableStock(), v.getSafetyStock(), v.getShortage()))
+                .toList();
+
+        List<StockStatsResponse.ByWarehouse> warehouses = byWarehouse.stream()
+                .map(v -> new StockStatsResponse.ByWarehouse(
+                        v.getWarehouseCode(), v.getAvailableSum(), v.getShortageCount()))
+                .toList();
+
+        return new StockStatsResponse(
+                new StockStatsResponse.SafetyShortage(items.size(), items),
+                warehouses
+        );
+    }
+
     @Transactional(readOnly = true)
     public StockDetailResponse getDetail(String sku) {
         List<Stock> rows = stockQueryRepository.findAllBySku(sku);
