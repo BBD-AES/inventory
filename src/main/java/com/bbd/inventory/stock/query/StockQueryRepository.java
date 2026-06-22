@@ -107,7 +107,8 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
                 s.safetyStock AS safetyStock,
                 (s.safetyStock - s.availableStock) AS shortage
             FROM Stock s JOIN s.warehouse w
-            WHERE s.availableStock < s.safetyStock
+            WHERE w.active = true
+              AND s.availableStock < s.safetyStock
             ORDER BY (s.safetyStock - s.availableStock) DESC, w.code, s.sku
             """)
     List<SafetyShortageView> safetyShortages();
@@ -122,6 +123,7 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
                 SUM(CASE WHEN s.availableStock < s.safetyStock
                             THEN 1 ELSE 0 END) AS shortageCount
             FROM Stock s JOIN s.warehouse w
+            WHERE w.active = true
             GROUP BY w.code
             ORDER BY w.code
             """)
