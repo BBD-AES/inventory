@@ -19,5 +19,7 @@ public record StockInRequested(
             String name,
             String unit,
             String category,
+            boolean active,
+            String sourcingType,
             int safetyStock) {}
 }

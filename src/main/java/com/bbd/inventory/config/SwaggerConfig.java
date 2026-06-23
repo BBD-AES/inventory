@@ -1,8 +1,10 @@
 package com.bbd.inventory.config;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
@@ -49,7 +51,10 @@ public class SwaggerConfig {
                                 .bearerFormat("JWT")
                                 .description("Keycloak Access Token 입력")))
 
+
                 .addSecurityItem(new SecurityRequirement()
                         .addList(BEARER_AUTH));
     }
+
+
 }
