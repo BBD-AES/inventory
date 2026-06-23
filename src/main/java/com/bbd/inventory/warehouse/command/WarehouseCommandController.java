@@ -1,8 +1,8 @@
 package com.bbd.inventory.warehouse.command;
 
-import com.bbd.inventory.common.IdempotencyStore;
 import com.bbd.inventory.warehouse.command.dto.CreateWarehouseCommand;
 import com.bbd.inventory.warehouse.command.dto.UpdateWarehouseCommand;
+import com.bbd.securitycore.idempotency.Idempotent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,15 +14,12 @@ import org.springframework.web.bind.annotation.*;
 public class WarehouseCommandController {
 
     private final WarehouseCommandService commandService;
-    private final IdempotencyStore idempotencyStore;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public String create(
-            @RequestHeader(value = "Idempotency-Key", required = false) String key,
-            @Valid @RequestBody CreateWarehouseCommand cmd) {
-
-        return idempotencyStore.execute(key, () -> commandService.create(cmd));
+    @Idempotent
+    public String create(@Valid @RequestBody CreateWarehouseCommand cmd) {
+        return commandService.create(cmd);
     }
 
     @PutMapping("/{code}")

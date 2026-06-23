@@ -1,10 +1,10 @@
 package com.bbd.inventory.stock.command;
 
-import com.bbd.inventory.common.IdempotencyStore;
 import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
 import com.bbd.inventory.stock.command.dto.StockAdjustResponse;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
+import com.bbd.securitycore.idempotency.Idempotent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -15,29 +15,27 @@ import org.springframework.web.bind.annotation.*;
 public class StockCommandController {
 
     private final StockCommandService commandService;
-    private final IdempotencyStore idempotencyStore;
 
     @PatchMapping("/{warehouseCode}/{sku}/location")
+    @Idempotent
     public StockLocationResponse changeLocation(
             @PathVariable String sku,
             @PathVariable String warehouseCode,
-            @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @Valid @RequestBody UpdateLocationCommand cmd) {
 
-        return idempotencyStore.execute(key, () -> commandService.changeLocation(sku, warehouseCode, cmd));
+        return commandService.changeLocation(sku, warehouseCode, cmd);
     }
 
     // 내부적인 재고 수정 (실사 보정) — corrected from spec's /warehouses/{sku}/edit,
     // which couldn't identify a row (stock is keyed by warehouse + sku).
     @PatchMapping("/{warehouseCode}/{sku}")
+    @Idempotent
     public StockAdjustResponse adjust(
             @PathVariable String warehouseCode,
             @PathVariable String sku,
-            @RequestHeader(value = "Idempotency-Key", required = false) String key,
             @Valid @RequestBody AdjustStockCommand cmd) {
 
-
-        return idempotencyStore.execute(key, () -> commandService.adjust(sku, warehouseCode, cmd));
+        return commandService.adjust(sku, warehouseCode, cmd);
     }
 
 }
