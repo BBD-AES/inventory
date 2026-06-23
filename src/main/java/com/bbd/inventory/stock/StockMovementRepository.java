@@ -13,13 +13,16 @@ import java.time.Instant;
 
 public interface StockMovementRepository extends JpaRepository<StockMovement, Long> {
 
+    // CAST(:from/:to AS Instant): nullable 타임스탬프 파라미터를 bare `IS NULL`로 쓰면 Postgres가
+    // 파라미터 타입을 못 정해 "could not determine data type of parameter" 500이 남(값이 null일 때).
+    // 컬럼 비교가 있는 String 파라미터(sku 등)는 VARCHAR로 추론되지만 timestamp는 명시 캐스팅 필요.
     @Query("""
             SELECT m FROM StockMovement m
             WHERE (:movementType IS NULL OR m.type = :movementType)
             AND (:sku IS NULL OR m.sku = :sku)
             AND (:warehouseCode IS NULL OR m.warehouseCode = :warehouseCode)
-            AND(:from IS NULL OR m.occurredAt >= :from)
-            AND(:to IS NULL OR m.occurredAt <= :to)
+            AND (CAST(:from AS Instant) IS NULL OR m.occurredAt >= :from)
+            AND (CAST(:to AS Instant) IS NULL OR m.occurredAt <= :to)
             """)
     Page<StockMovement> search(
             @Param("movementType") MovementType movementType,
