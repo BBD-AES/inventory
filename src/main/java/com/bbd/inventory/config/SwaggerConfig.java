@@ -40,7 +40,7 @@ public class SwaggerConfig {
                         .description("강의실 노트북"))
 
                 .addServersItem(new Server()
-                        .url("http://bbd.inwoohub.com/inventory")
+                        .url("https://bbd.inwoohub.com/inventory")
                         .description("ECS Swagger"))
 
                 .addServersItem(new Server()
