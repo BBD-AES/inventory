@@ -18,6 +18,7 @@ public class WarehouseCommandController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Idempotent
+    // ㅜㅜ
     public String create(@Valid @RequestBody CreateWarehouseCommand cmd) {
         return commandService.create(cmd);
     }
