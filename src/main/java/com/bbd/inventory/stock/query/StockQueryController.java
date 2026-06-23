@@ -39,6 +39,12 @@ public class StockQueryController {
         return queryService.summary();
     }
 
+    // literal /stats outranks /{sku} in Spring path matching — no ordering needed
+    @GetMapping("/stats")
+    public StockStatsResponse stats() {
+        return queryService.stats();
+    }
+
     @GetMapping("/{sku}")
     public StockDetailResponse getDetail(@PathVariable String sku) {
         return queryService.getDetail(sku);
