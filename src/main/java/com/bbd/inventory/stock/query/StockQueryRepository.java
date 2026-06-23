@@ -82,8 +82,8 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
             SELECT COUNT(DISTINCT s.sku) AS totalSkus,
                 COALESCE(SUM(s.currentStock), 0) AS totalCurrentStock,
                 COALESCE(SUM(s.availableStock), 0) AS totalAvailableStock,
-                SUM(CASE WHEN s.currentStock < s.safetyStock
-                            THEN 1 ELSE 0 END) AS belowSafetyCount
+                COALESCE(SUM(CASE WHEN s.currentStock < s.safetyStock
+                            THEN 1 ELSE 0 END), 0) AS belowSafetyCount
             FROM Stock s
             WHERE s.warehouse.active = true
             """)
