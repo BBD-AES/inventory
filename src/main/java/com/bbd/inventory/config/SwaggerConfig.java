@@ -31,21 +31,24 @@ public class SwaggerConfig {
                         .version("v1.0"))
 
                 // ===== 서버 목록 =====
+//                .addServersItem(new Server()
+//                        .url("http://localhost:8080/inventory")
+//                        .description("로컬 스웨거"))
+//
+//                .addServersItem(new Server()
+//                        .url("http://192.168.200.220/inventory")
+//                        .description("강의실 노트북"))
+//
+//                .addServersItem(new Server()
+//                        .url("https://bbd.inwoohub.com/inventory")
+//                        .description("ECS Swagger"))
+//
+//                .addServersItem(new Server()
+//                        .url("http://100.73.142.41/inventory")
+//                        .description("TailScale 강의실 노트북"))
                 .addServersItem(new Server()
-                        .url("http://localhost:8080/inventory")
-                        .description("로컬 스웨거"))
-
-                .addServersItem(new Server()
-                        .url("http://192.168.200.220/inventory")
-                        .description("강의실 노트북"))
-
-                .addServersItem(new Server()
-                        .url("https://bbd.inwoohub.com/inventory")
-                        .description("ECS Swagger"))
-
-                .addServersItem(new Server()
-                        .url("http://100.73.142.41/inventory")
-                        .description("TailScale 강의실 노트북"))
+                        .url("/inventory")
+                        .description("현재 호스트"))
 
                 // ===== 인증 스킴: JWT Bearer + 공통 멱등 헤더 정의 =====
                 .components(new Components()
