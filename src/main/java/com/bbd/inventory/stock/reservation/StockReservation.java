@@ -27,7 +27,7 @@ public class StockReservation {
     @Column(name = "request_id", nullable = false, length = 36)
     private String requestId;
 
-    @Column(name = "soNumber", nullable = false)
+    @Column(name = "so_number", nullable = false)
     private String soNumber;
 
     @Column(nullable = false, length = 255) private String sku;
