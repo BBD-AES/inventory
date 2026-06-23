@@ -6,6 +6,7 @@ import com.bbd.inventory.stock.*;
 import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
 import com.bbd.inventory.stock.command.dto.StockAdjustResponse;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
+import com.bbd.inventory.stock.command.dto.StockOutboundRequest;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
 import com.bbd.inventory.stock.event.StockInRequested;
 import com.bbd.inventory.stock.event.StockOutRequested;
@@ -84,6 +85,33 @@ public class StockCommandService {
                     .quantity(line.quantity())
                     .unitPrice(line.unitPrice())
                     .referenceNumber(e.soNumber())
+                    .build());
+        }
+    }
+
+    /**
+     * 수주 종료 출고(#69, 동기 REST). sales 가 CO 종료 시 지정 창고 재고를 차감.
+     * - referenceNumber(coNumber) 기준 멱등: 이미 OUT 기록이 있으면 재처리 안 함(재시도/중복 안전).
+     * - findForUpdate 비관락으로 라인별 차감, 부족 시 applyOut 이 INSUFFICIENT_STOCK(409) → 전체 롤백.
+     * 예약(reservation) 없는 직접 출고라 applyOut(current·available 동시 차감)을 사용 — 예약 기반 issue 와 구분.
+     */
+    @Transactional
+    public void outbound(StockOutboundRequest req) {
+        if (stockMovementRepository.existsByReferenceNumberAndType(req.referenceNumber(), MovementType.OUT)) {
+            return; // 이미 출고됨 — 멱등 재시도(no-op)
+        }
+        for (StockOutboundRequest.Line line : req.lines()) {
+            Stock stock = stockRepository.findForUpdate(line.sku(), line.warehouseCode())
+                    .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
+
+            stock.applyOut(line.quantity());
+            stockMovementRepository.save(StockMovement.builder()
+                    .sku(line.sku())
+                    .warehouseCode(line.warehouseCode())
+                    .type(MovementType.OUT)
+                    .quantity(line.quantity())
+                    .unitPrice(line.unitPrice())
+                    .referenceNumber(req.referenceNumber())
                     .build());
         }
     }
