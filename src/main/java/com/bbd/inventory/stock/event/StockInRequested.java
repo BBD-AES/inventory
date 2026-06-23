@@ -19,5 +19,5 @@ public record StockInRequested(
             String name,
             String unit,
             String category,
-            int safetyStock) {}
+            Integer safetyStock) {}
 }
