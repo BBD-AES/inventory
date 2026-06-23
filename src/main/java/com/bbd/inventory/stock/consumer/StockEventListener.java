@@ -32,6 +32,7 @@ public class StockEventListener {
 
 
     @KafkaListener(topics = "procurement.stock-in-requested", groupId = "stock-group")
+    @Transactional
     public void onStockIn(String message) {
 
         StockInRequested e = objectMapper.readValue(message, StockInRequested.class);
