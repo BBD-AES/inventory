@@ -30,4 +30,7 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
             Pageable pageable
     );
 
+    // 수주 종료 출고 멱등(#69): 같은 referenceNumber(coNumber)로 이미 OUT 기록이 있으면 재처리 차단.
+    boolean existsByReferenceNumberAndType(String referenceNumber, MovementType type);
+
 }

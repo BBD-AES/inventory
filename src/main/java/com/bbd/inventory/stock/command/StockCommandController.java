@@ -4,6 +4,7 @@ import com.bbd.inventory.common.IdempotencyStore;
 import com.bbd.inventory.stock.command.dto.AdjustStockCommand;
 import com.bbd.inventory.stock.command.dto.StockAdjustResponse;
 import com.bbd.inventory.stock.command.dto.StockLocationResponse;
+import com.bbd.inventory.stock.command.dto.StockOutboundRequest;
 import com.bbd.inventory.stock.command.dto.UpdateLocationCommand;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,14 @@ public class StockCommandController {
 
 
         return idempotencyStore.execute(key, () -> commandService.adjust(sku, warehouseCode, cmd));
+    }
+
+    // 수주 종료 출고(#69): sales 가 CO 종료 시 지정 창고 재고 차감 + movement OUT.
+    // 멱등은 referenceNumber(coNumber) 기준으로 서비스에서 처리(서비스 간 직접 호출이라 Idempotency-Key 헤더 없음).
+    // 부족 시 INSUFFICIENT_STOCK(409) → sales 가 종료 차단(CO007).
+    @PostMapping("/outbound")
+    public void outbound(@Valid @RequestBody StockOutboundRequest request) {
+        commandService.outbound(request);
     }
 
 }
