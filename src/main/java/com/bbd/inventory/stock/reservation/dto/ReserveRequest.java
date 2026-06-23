@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record ReserveRequest(
-        @NotBlank String requestId,
+        String requestId,  // 레거시 선택 폴백 — 멱등 키는 Idempotency-Key 헤더가 표준
         @NotBlank String soNumber,
         @NotBlank String sku,
         @NotBlank String warehouseCode,

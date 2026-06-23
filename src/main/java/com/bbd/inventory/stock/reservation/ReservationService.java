@@ -33,12 +33,19 @@ public class ReservationService {
 
     /*
         Atomic single-warehouse reserve; returns the amount actually taken.
-        Idempotent on requestId.
+        멱등 키 일원화(공통 표준): Idempotency-Key 헤더를 dedup 키로 우선 사용.
+        레거시 호출(헤더 미전송)은 바디 requestId 폴백. DB UNIQUE(uq_reservation_request)가 정확성 보루.
      */
     @Transactional
-    public ReserveResponse reserve(ReserveRequest req) {
+    public ReserveResponse reserve(ReserveRequest req, String idempotencyKey) {
+        String dedupKey = (idempotencyKey != null && !idempotencyKey.isBlank())
+                ? idempotencyKey : req.requestId();
+        if (dedupKey == null || dedupKey.isBlank()) {
+            throw new ApiException(ErrorCode.IDEMPOTENCY_KEY_REQUIRED);
+        }
+
         var existing =
-                stockReservationRepository.findByRequestId(req.requestId());
+                stockReservationRepository.findByRequestId(dedupKey);
         if (existing.isPresent()) {
             return replay(existing.get(), req.quantity());
         }
@@ -52,7 +59,7 @@ public class ReservationService {
         if (granted > 0) {
             StockReservation saved =
                     stockReservationRepository.save(StockReservation.builder()
-                            .requestId(req.requestId())
+                            .requestId(dedupKey)
                             .soNumber(req.soNumber())
                             .sku(req.sku())
                             .warehouseCode(req.warehouseCode())
