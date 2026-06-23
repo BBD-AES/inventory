@@ -21,7 +21,6 @@ public class StockCommandService {
 
     private final StockRepository stockRepository;
     private final WarehouseRepository warehouseRepository;      // cross-context read
-    private final ItemClient itemClient;                        // cross-service read
     private final StockMovementRepository stockMovementRepository;
 
     @Transactional
@@ -118,20 +117,18 @@ public class StockCommandService {
         Warehouse warehouse = warehouseRepository.findByCode(line.warehouseCode())
                 .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND));
 
-        ItemInfo item = itemClient.getBySku(line.sku())
-                .orElseThrow(() -> new ApiException(ErrorCode.SKU_NOT_FOUND));
-
+        // Item metadata is event-carried (procurement enriches the line); no cross-service call.
         return stockRepository.save(Stock.builder()
                 .warehouse(warehouse)
-                .sku(item.sku())
-                .name(item.name())
-                .unit(item.unit())
+                .sku(line.sku())
+                .name(line.name())
+                .unit(line.unit())
                 .currentStock(0)
                 .availableStock(0)
-                .safetyStock(item.safetyStock())
-                .category(item.category())
+                .safetyStock(line.safetyStock())
+                .category(line.category())
                 .location(null)
-                .unitPrice(item.unitPrice())
+                .unitPrice(line.unitPrice())
                 .build());
     }
 

@@ -75,9 +75,6 @@ springdoc:
     url: /inventory/v3/api-docs
     config-url: /inventory/v3/api-docs/swagger-config
 
-items:
-  base-url: ${ITEM_SERVICE_BASE_URL:http://100.73.142.41/item}
-
 logging:
   level:
     root: info

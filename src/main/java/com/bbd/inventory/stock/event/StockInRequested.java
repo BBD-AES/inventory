@@ -15,5 +15,9 @@ public record StockInRequested(
             String sku,
             int quantity,
             String warehouseCode,
-            int unitPrice) {}
+            int unitPrice,
+            String name,
+            String unit,
+            String category,
+            int safetyStock) {}
 }
