@@ -60,8 +60,11 @@ public class StockQueryService {
 
     @Transactional(readOnly = true)
     public StockSummaryResponse summary() {
-        List<WarehouseStockView> warehouse = stockQueryRepository.warehouseStockSummary();
-        StockKpiView kpi = stockQueryRepository.stockKpis();
+        // BRANCH caller sees only its own warehouse; HQ/ADMIN see all (scope == null).
+        String scope = branchScope.warehouseCodeFilter();
+
+        List<WarehouseStockView> warehouse = stockQueryRepository.warehouseStockSummary(scope);
+        StockKpiView kpi = stockQueryRepository.stockKpis(scope);
 
         List<StockSummaryResponse.WarehouseStock> warehouses = warehouse.stream()
                 .map(v -> new StockSummaryResponse.WarehouseStock(
@@ -69,8 +72,10 @@ public class StockQueryService {
                         v.getSkuCount(), v.getCurrentStock()))
                 .toList();
 
+        long totalWarehouses = scope == null ? warehouseRepository.count() : warehouses.size();
+
         return new StockSummaryResponse(
-                warehouseRepository.count(),        // all
+                totalWarehouses,                    // all (or own, when scoped)
                 warehouses.size(),                  // active
                 kpi.getTotalSkus(),
                 kpi.getTotalCurrentStock(),
@@ -87,8 +92,10 @@ public class StockQueryService {
      */
     @Transactional(readOnly = true)
     public StockStatsResponse stats() {
-        List<SafetyShortageView> shortages = stockQueryRepository.safetyShortages();
-        List<WarehouseAvailabilityView> byWarehouse = stockQueryRepository.warehouseAvailability();
+        // BRANCH caller sees only its own warehouse; HQ/ADMIN see all (scope == null).
+        String scope = branchScope.warehouseCodeFilter();
+        List<SafetyShortageView> shortages = stockQueryRepository.safetyShortages(scope);
+        List<WarehouseAvailabilityView> byWarehouse = stockQueryRepository.warehouseAvailability(scope);
 
         List<StockStatsResponse.SafetyShortage.Item> items = shortages.stream()
                 .map(v -> new StockStatsResponse.SafetyShortage.Item(

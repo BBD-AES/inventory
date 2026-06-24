@@ -1,5 +1,6 @@
 package com.bbd.inventory.stock.query;
 
+import com.bbd.inventory.common.BranchScope;
 import com.bbd.inventory.stock.query.dto.SafetyShortageView;
 import com.bbd.inventory.stock.query.dto.StockStatsResponse;
 import com.bbd.inventory.stock.query.dto.WarehouseAvailabilityView;
@@ -13,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
@@ -30,16 +32,20 @@ class StockQueryServiceStatsTest {
     @Mock
     private WarehouseRepository warehouseRepository;
 
+    @Mock
+    private BranchScope branchScope;
+
     @InjectMocks
     private StockQueryService service;
 
     @Test
     void stats_mapsShortagesAndWarehouseAggregates() {
-        when(stockQueryRepository.safetyShortages()).thenReturn(List.of(
+        when(branchScope.warehouseCodeFilter()).thenReturn(null);   // HQ caller, unscoped
+        when(stockQueryRepository.safetyShortages(any())).thenReturn(List.of(
                 shortage("SKU-1", "WH-A", 8, 3, 10, 7),
                 shortage("SKU-2", "WH-B", 0, 0, 5, 5)
         ));
-        when(stockQueryRepository.warehouseAvailability()).thenReturn(List.of(
+        when(stockQueryRepository.warehouseAvailability(any())).thenReturn(List.of(
                 warehouse("WH-A", 120L, 1L),
                 warehouse("WH-B", 0L, 1L)
         ));
@@ -66,8 +72,9 @@ class StockQueryServiceStatsTest {
 
     @Test
     void stats_emptyWhenNoShortages() {
-        when(stockQueryRepository.safetyShortages()).thenReturn(List.of());
-        when(stockQueryRepository.warehouseAvailability()).thenReturn(List.of());
+        when(branchScope.warehouseCodeFilter()).thenReturn(null);
+        when(stockQueryRepository.safetyShortages(any())).thenReturn(List.of());
+        when(stockQueryRepository.warehouseAvailability(any())).thenReturn(List.of());
 
         StockStatsResponse res = service.stats();
 

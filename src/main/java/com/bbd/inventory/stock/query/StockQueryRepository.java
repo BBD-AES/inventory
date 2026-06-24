@@ -70,10 +70,11 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
                 COALESCE(SUM(s.currentStock), 0) AS currentStock
             FROM Warehouse w LEFT JOIN Stock s ON s.warehouse = w
             WHERE w.active = true
+              AND (:scope IS NULL OR w.code = :scope)
             GROUP BY w.code, w.name, w.type
             ORDER BY w.code
             """)
-    List<WarehouseStockView> warehouseStockSummary();
+    List<WarehouseStockView> warehouseStockSummary(@Param("scope") String scope);
 
     /**
      * stock KPIs
@@ -86,8 +87,9 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
                             THEN 1 ELSE 0 END), 0) AS belowSafetyCount
             FROM Stock s
             WHERE s.warehouse.active = true
+              AND (:scope IS NULL OR s.warehouse.code = :scope)
             """)
-    StockKpiView stockKpis();
+    StockKpiView stockKpis(@Param("scope") String scope);
 
     @Query("""
             SELECT s FROM Stock s JOIN FETCH s.warehouse w
@@ -109,9 +111,10 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
             FROM Stock s JOIN s.warehouse w
             WHERE w.active = true
               AND s.availableStock < s.safetyStock
+              AND (:scope IS NULL OR w.code = :scope)
             ORDER BY (s.safetyStock - s.availableStock) DESC, w.code, s.sku
             """)
-    List<SafetyShortageView> safetyShortages();
+    List<SafetyShortageView> safetyShortages(@Param("scope") String scope);
 
     /**
      * Dashboard (#41) — per-warehouse available-stock sum and below-safety SKU count
@@ -124,9 +127,10 @@ StockQueryRepository extends JpaRepository<Stock, Long> {
                             THEN 1 ELSE 0 END) AS shortageCount
             FROM Stock s JOIN s.warehouse w
             WHERE w.active = true
+              AND (:scope IS NULL OR w.code = :scope)
             GROUP BY w.code
             ORDER BY w.code
             """)
-    List<WarehouseAvailabilityView> warehouseAvailability();
+    List<WarehouseAvailabilityView> warehouseAvailability(@Param("scope") String scope);
 
 }
