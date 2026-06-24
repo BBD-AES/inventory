@@ -8,5 +8,5 @@ public record CreateWarehouseCommand(
         @NotBlank String code,
         @NotBlank String name,
         @NotNull WarehouseType type,
-        String address
+        @NotBlank String address
 ) {}

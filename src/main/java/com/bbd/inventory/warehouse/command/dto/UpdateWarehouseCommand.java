@@ -7,5 +7,5 @@ import jakarta.validation.constraints.NotNull;
 public record UpdateWarehouseCommand(
         @NotBlank String name,
         @NotNull WarehouseType type,
-        String address
+        @NotBlank String address
 ) {}

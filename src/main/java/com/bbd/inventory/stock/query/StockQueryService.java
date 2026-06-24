@@ -1,5 +1,6 @@
 package com.bbd.inventory.stock.query;
 
+import com.bbd.inventory.common.BranchScope;
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
@@ -20,14 +21,19 @@ public class StockQueryService {
     private final StockQueryRepository stockQueryRepository;
     // cross-context read, filter validation only
     private final WarehouseRepository warehouseRepository;
+    private final BranchScope branchScope;
 
 
     // 재고 조회
     @Transactional(readOnly = true)
     public PageResponse<StockListItemResponse> search(StockSearchCondition cond, Pageable pageable) {
 
-        if (cond.warehouseCode() != null
-                && !warehouseRepository.existsByCode(cond.warehouseCode())) {
+        // BRANCH caller is locked to its own warehouse; HQ/ADMIN keep the client filter.
+        String scope = branchScope.warehouseCodeFilter();
+        String warehouseCode = scope != null ? scope : cond.warehouseCode();
+
+        if (scope == null && warehouseCode != null
+                && !warehouseRepository.existsByCode(warehouseCode)) {
             throw new ApiException(ErrorCode.INVALID_FILTER);
         }
 
@@ -35,7 +41,7 @@ public class StockQueryService {
 
         return PageResponse.from(
                 stockQueryRepository.search(
-                        cond.warehouseCode(),
+                        warehouseCode,
                         cond.sku(),
                         cond.category(),
                         belowSafety,

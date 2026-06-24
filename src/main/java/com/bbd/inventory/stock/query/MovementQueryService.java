@@ -1,5 +1,6 @@
 package com.bbd.inventory.stock.query;
 
+import com.bbd.inventory.common.BranchScope;
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.global.error.ApiException;
 import com.bbd.inventory.global.error.dto.ErrorCode;
@@ -19,14 +20,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class MovementQueryService {
 
     private final StockMovementRepository repo;
+    private final BranchScope branchScope;
 
     @Transactional(readOnly = true)
     public PageResponse<MovementResponse> search(MovementSearchCondition c, Pageable pageable) {
         if (c.from() != null && c.to() != null && c.from().isAfter(c.to())) {
             throw new ApiException(ErrorCode.INVALID_DATE_RANGE);
         }
+        // BRANCH caller is locked to its own warehouse; HQ/ADMIN keep the client filter.
+        String scope = branchScope.warehouseCodeFilter();
+        String warehouseCode = scope != null ? scope : c.warehouseCode();
+
         return PageResponse.from(
-                repo.search(c.movementType(), c.sku(), c.warehouseCode(),
+                repo.search(c.movementType(), c.sku(), warehouseCode,
                         c.from(), c.to(), pageable).map(MovementResponse::from));
     }
 
