@@ -1,4 +1,5 @@
 server:
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /inventory
 
@@ -7,17 +8,42 @@ spring:
     name: inventory
   config:
     import: optional:file:.env[.properties]
-
   threads:
     virtual:
-      enabled: true # Java 21 Virtual Thread 사용
+      enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+
+  sql:
+    init:
+      mode: never
+  http:
+    serviceclient:
+      bbd-user-service:
+        base-url: ${USER_SERVICE_BASE_URL:http://localhost:8081/user}
+      bbd-item-service:
+        base-url: ${ITEM_SERVICE_BASE_URL:http://localhost:8082}
+      bbd-inventory-service:
+        base-url: ${INVENTORY_SERVICE_BASE_URL:http://localhost:8083}
+      bbd-procurement-service:
+        base-url: ${PROCUREMENT_SERVICE_BASE_URL:http://localhost:8084}
+      bbd-sales-service:
+        base-url: ${SALES_SERVICE_BASE_URL:http://localhost:8085}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      ssl:
+        enabled: true
 
   datasource:
     url: ${DB_ENDPOINT}
     username: ${DB_NAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
   jpa:
     hibernate:
       ddl-auto: update
@@ -28,51 +54,17 @@ spring:
         show_sql: false
         jdbc:
           time_zone: Asia/Seoul
-
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka.inwoohub.com:9092}
-
     consumer:
       group-id: ${KAFKA_CONSUMER_GROUP_ID:stock-group}
       auto-offset-reset: ${KAFKA_OFFSET_RESET:latest}
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI}
-
-# Swagger
-springdoc:
-  swagger-ui:
-    tags-sorter: alpha
-    operations-sorter: alpha
-    url: /inventory/v3/api-docs
-    config-url: /inventory/v3/api-docs/swagger-config
-
-security:
-  http:
-    serviceclient:
-      bbd-user-service:
-        base-url: ${USER_SERVICE_BASE_URL:http://localhost:8081/user}
-      bbd-item-service:
-        base-url: ${ITEM_SERVICE_BASE_URL:http://localhost:8082/item}
-      bbd-inventory-service:
-        base-url: ${INVENTORY_SERVICE_BASE_URL:http://localhost:8083/inventory}
-      bbd-procurement-service:
-        base-url: ${PROCUREMENT_SERVICE_BASE_URL:http://localhost:8084/procurement}
-      bbd-sales-service:
-        base-url: ${SALES_SERVICE_BASE_URL:http://localhost:8085/sales}
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
 bbd:
   security:
     enabled: true
@@ -83,9 +75,18 @@ bbd:
       - /swagger-ui.html
       - /v3/api-docs/**
 
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: alpha
+    url: /inventory/v3/api-docs
+    config-url: /inventory/v3/api-docs/swagger-config
+
 logging:
   level:
     root: info
     com.bbd.inventory: DEBUG
     org.hibernate.SQL: warn
     org.hibernate.orm.jdbc.bind: warn
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
