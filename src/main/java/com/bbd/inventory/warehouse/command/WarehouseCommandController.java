@@ -41,7 +41,6 @@ public class WarehouseCommandController {
     }
 
     @PatchMapping("/{code}/deactivate")
-    @RequireRole({UserRole.BRANCH_MANAGER, UserRole.HQ_MANAGER})
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deactivate(@PathVariable String code,
                            @RequestHeader(value = "Idempotency-Key", required = false) String key) {

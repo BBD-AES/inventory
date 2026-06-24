@@ -1,8 +1,6 @@
 package com.bbd.inventory.stock.reservation;
 
 import com.bbd.inventory.stock.reservation.dto.*;
-import com.bbd.securitycore.adapter.in.annotation.RequireRole;
-import com.bbd.securitycore.domain.UserRole;
 import com.bbd.securitycore.idempotency.Idempotent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

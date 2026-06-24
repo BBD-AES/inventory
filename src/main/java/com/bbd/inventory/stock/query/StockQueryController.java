@@ -2,8 +2,6 @@ package com.bbd.inventory.stock.query;
 
 import com.bbd.inventory.common.PageResponse;
 import com.bbd.inventory.stock.query.dto.*;
-import com.bbd.securitycore.adapter.in.annotation.RequireRole;
-import com.bbd.securitycore.domain.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -13,7 +11,6 @@ import java.util.List;
 
 // 재고 조회 역할 게이트 복구 — 인증·ACTIVE 상태 + 역할 검증(security-core). 미부착 시 PENDING/INACTIVE도 조회 가능했음.
 // 전 역할 읽기 허용(스코핑 아님). 지점=자기 창고만은 별도 후속(서비스단 이름축 스코핑).
-@RequireRole({UserRole.ADMIN, UserRole.HQ_MANAGER, UserRole.HQ_STAFF, UserRole.BRANCH_MANAGER, UserRole.BRANCH_STAFF})
 @RestController
 @RequestMapping("/api/v1/stocks")
 @RequiredArgsConstructor
