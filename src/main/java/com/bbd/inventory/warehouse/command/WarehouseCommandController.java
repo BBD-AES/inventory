@@ -2,6 +2,8 @@ package com.bbd.inventory.warehouse.command;
 
 import com.bbd.inventory.warehouse.command.dto.CreateWarehouseCommand;
 import com.bbd.inventory.warehouse.command.dto.UpdateWarehouseCommand;
+import com.bbd.securitycore.adapter.in.annotation.RequireRole;
+import com.bbd.securitycore.domain.UserRole;
 import com.bbd.securitycore.idempotency.Idempotent;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ public class WarehouseCommandController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @RequireRole({UserRole.BRANCH_MANAGER, UserRole.HQ_MANAGER})
     @Idempotent
     public String create(@Valid @RequestBody CreateWarehouseCommand cmd) {
         return commandService.create(cmd);
@@ -38,6 +41,7 @@ public class WarehouseCommandController {
     }
 
     @PatchMapping("/{code}/deactivate")
+    @RequireRole({UserRole.BRANCH_MANAGER, UserRole.HQ_MANAGER})
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deactivate(@PathVariable String code,
                            @RequestHeader(value = "Idempotency-Key", required = false) String key) {
