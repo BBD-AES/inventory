@@ -40,6 +40,6 @@ public class ReservationController {
 
     @PostMapping("/issue")
     public IssueResponse issue(@Valid @RequestBody IssueRequest req) {
-        return reservationService.issue(req.soNumber());
+        return reservationService.issue(req.soNumber(), req.toWarehouseCode());
     }
 }
