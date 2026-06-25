@@ -13,9 +13,11 @@ import com.bbd.inventory.stock.event.StockOutRequested;
 import com.bbd.inventory.warehouse.Warehouse;
 import com.bbd.inventory.warehouse.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StockCommandService {
@@ -143,7 +145,14 @@ public class StockCommandService {
     private Stock createForInbound(StockInRequested.Line line) {
 
         Warehouse warehouse = warehouseRepository.findByCode(line.warehouseCode())
-                .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND));
+                .orElseThrow(() -> {
+                    // Inbound references a warehouse inventory doesn't know — receive will roll back
+                    // (-> DLT). Name the bad code so the procurement contract mismatch is diagnosable.
+                    log.warn("inbound rejected: unknown warehouseCode={} (sku={}); "
+                                    + "register the warehouse before receiving into it",
+                            line.warehouseCode(), line.sku());
+                    return new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND);
+                });
 
         // Item metadata is event-carried (procurement enriches the line); no cross-service call.
         return stockRepository.save(Stock.builder()
