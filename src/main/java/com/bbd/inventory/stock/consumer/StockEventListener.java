@@ -78,7 +78,15 @@ public class StockEventListener {
         SalesOrderReceived e = objectMapper.readValue(message, SalesOrderReceived.class);
         if (processedEventRepository.claim(e.eventId()) == 0) return;   // already processed
 
-        reservationService.issue(e.soNumber());
+        // 배포 순서 가드: 구버전 sales(toWarehouseCode 없는 4-필드 payload)가 신 inventory로 들어오면
+        // 도착 지점 입고(IN)가 조용히 스킵된다. 그 누락을 가시화한다(sales 선배포 + outbox 드레인 후엔 0건이어야 정상).
+        if (e.toWarehouseCode() == null || e.toWarehouseCode().isBlank()) {
+            log.warn("sales.order.received에 toWarehouseCode 없음 → 도착 지점 입고(IN) 스킵, 출처 OUT만 수행. "
+                    + "구 sales payload 의심(배포 순서/outbox 잔여 확인). soNumber={}", e.soNumber());
+        }
+
+        // 출처 예약분 출고(OUT) + 도착 지점(toWarehouseCode) 입고(IN). claim(eventId)이 재전달 이중처리를 막는다.
+        reservationService.issue(e.soNumber(), e.toWarehouseCode());
     }
 
 

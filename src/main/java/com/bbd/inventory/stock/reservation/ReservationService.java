@@ -7,6 +7,8 @@ import com.bbd.inventory.stock.reservation.dto.IssueResponse;
 import com.bbd.inventory.stock.reservation.dto.ReleaseResponse;
 import com.bbd.inventory.stock.reservation.dto.ReserveRequest;
 import com.bbd.inventory.stock.reservation.dto.ReserveResponse;
+import com.bbd.inventory.warehouse.Warehouse;
+import com.bbd.inventory.warehouse.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +27,7 @@ public class ReservationService {
     private final StockRepository stockRepository;
     private final StockMovementRepository stockMovementRepository;
     private final StockReservationRepository stockReservationRepository;
+    private final WarehouseRepository warehouseRepository; // 도착 지점 입고(IN) 시 목적지 Stock 생성에 필요(Stock.builder 가 Warehouse 엔티티 요구)
 
     // STUDY: ISO-8601 duration, e.g. PT24H. Field injection
     // so @RequiredArgConstructor ignores it
@@ -117,29 +120,69 @@ public class ReservationService {
     }
 
     /*
-        Issue every RESERVED row of the SO: physical OUT + movement.
-        Idempotent (ISSUED rows excluded)
+        Issue every RESERVED row of the SO: source OUT + movement, then (when a destination is given)
+        load the same quantity INTO the destination warehouse: dest IN + movement.
+        toWarehouseCode = the SO's destination branch (sales.order.received). The destination Stock row
+        is found-or-created from the source Stock's catalog snapshot (name/unit/category/unitPrice; safetyStock 0).
+        Idempotent (ISSUED rows excluded): a redelivery/re-call finds no RESERVED rows, so neither OUT nor IN repeats.
+        toWarehouseCode == null/blank (legacy 4-field event / sync caller w/o dest) -> OUT only (backward-compatible).
      */
     @Transactional
-    public IssueResponse issue(String soNumber) {
+    public IssueResponse issue(String soNumber, String toWarehouseCode) {
         List<StockReservation> rows =
                 stockReservationRepository.findBySoNumberAndStatus(soNumber, ReservationStatus.RESERVED);
 
+        boolean inboundToDestination = toWarehouseCode != null && !toWarehouseCode.isBlank();
+        // 목적지 창고는 사전 등록돼 있어야 함(Stock 의 warehouse FK). 미등록이면 WAREHOUSE_NOT_FOUND → tx 롤백 → claim un-claim → 재시도.
+        // rows 가 비면(이미 ISSUED = 재전달/중복) IN 할 일이 없으므로 창고 조회도 건너뛴다(no-op 재처리가 창고 조회로 실패하지 않게).
+        Warehouse destWarehouse = (inboundToDestination && !rows.isEmpty())
+                ? warehouseRepository.findByCode(toWarehouseCode)
+                        .orElseThrow(() -> new ApiException(ErrorCode.WAREHOUSE_NOT_FOUND))
+                : null;
+
         List<IssueResponse.Line> lines = new ArrayList<>();
         for (StockReservation r : rows) {
-            Stock stock = stockRepository.findForUpdate(r.getSku(), r.getWarehouseCode())
+            // 1) 출처 출고(OUT): 예약된 창고에서 현재고 차감(가용은 예약 때 이미 차감됨)
+            Stock source = stockRepository.findForUpdate(r.getSku(), r.getWarehouseCode())
                     .orElseThrow(() -> new ApiException(ErrorCode.STOCK_NOT_FOUND));
-
-            stock.issue(r.getQuantity());
+            source.issue(r.getQuantity());
             stockMovementRepository.save(StockMovement.builder()
                     .sku(r.getSku())
                     .warehouseCode(r.getWarehouseCode())
                     .type(MovementType.OUT)
                     .quantity(r.getQuantity())
-                    .unitPrice(stock.getUnitPrice())
+                    .unitPrice(source.getUnitPrice())
                     .referenceNumber(soNumber)
                     .build());
             r.markIssued();
+
+            // 2) 도착 지점 입고(IN): 목적지 창고에 적재(없으면 출처 Stock 의 카탈로그 스냅샷으로 생성).
+            //    ★반드시 이 RESERVED 루프 안(markIssued 게이트 안쪽)에 둔다 — 재전달/재호출 시 RESERVED 0건 → IN 도 1회만.
+            if (inboundToDestination) {
+                Stock dest = stockRepository.findForUpdate(r.getSku(), toWarehouseCode)
+                        .orElseGet(() -> stockRepository.save(Stock.builder()
+                                .warehouse(destWarehouse)
+                                .sku(source.getSku())
+                                .name(source.getName())
+                                .unit(source.getUnit())
+                                .currentStock(0)
+                                .availableStock(0)
+                                .safetyStock(0)            // 지점 안전재고 기본 0 — 운영자가 별도 설정
+                                .unitPrice(source.getUnitPrice())
+                                .category(source.getCategory())
+                                .location(null)
+                                .build()));
+                dest.applyIn(r.getQuantity());
+                stockMovementRepository.save(StockMovement.builder()
+                        .sku(r.getSku())
+                        .warehouseCode(toWarehouseCode)
+                        .type(MovementType.IN)
+                        .quantity(r.getQuantity())
+                        .unitPrice(dest.getUnitPrice())
+                        .referenceNumber(soNumber)
+                        .build());
+            }
+
             lines.add(new IssueResponse.Line(r.getWarehouseCode(), r.getSku(), r.getQuantity()));
         }
 
