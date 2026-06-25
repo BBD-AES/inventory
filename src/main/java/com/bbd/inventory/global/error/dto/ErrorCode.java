@@ -99,6 +99,11 @@ public enum ErrorCode {
             "동일한 Idempotency-Key를 가진 요청이 현재 처리 중입니다."
     ),
 
+    IDEMPOTENT_DUPLICATE(
+            HttpStatus.CONFLICT,
+            "이미 처리된 요청입니다. (멱등 중복 차단)"
+    ),
+
     IDEMPOTENCY_PAYLOAD_MISMATCH(
             HttpStatus.UNPROCESSABLE_CONTENT,
             "동일한 Idempotency-Key에 대해 최초 요청과 다른 요청 본문이 전달되었습니다."

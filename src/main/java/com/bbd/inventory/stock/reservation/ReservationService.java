@@ -38,16 +38,15 @@ public class ReservationService {
      */
     @Transactional
     public ReserveResponse reserve(ReserveRequest req, String idempotencyKey) {
-        String dedupKey = (idempotencyKey != null && !idempotencyKey.isBlank())
-                ? idempotencyKey : req.requestId();
+        // 멱등 키 일원화(공통 표준 §2): Idempotency-Key 헤더만 dedup 키로 사용(바디 requestId 폴백 제거).
+        String dedupKey = idempotencyKey;
         if (dedupKey == null || dedupKey.isBlank()) {
             throw new ApiException(ErrorCode.IDEMPOTENCY_KEY_REQUIRED);
         }
 
-        var existing =
-                stockReservationRepository.findByRequestId(dedupKey);
-        if (existing.isPresent()) {
-            return replay(existing.get(), req.quantity());
+        // 중복 재요청(공통 표준 §6): 409 반환 — 원본 응답을 재생/반환하지 않는다.
+        if (stockReservationRepository.findByRequestId(dedupKey).isPresent()) {
+            throw new ApiException(ErrorCode.IDEMPOTENT_DUPLICATE);
         }
 
         Stock stock = stockRepository.findForUpdate(req.sku(), req.warehouseCode())
@@ -75,16 +74,6 @@ public class ReservationService {
                 reservationId, req.soNumber(), req.sku(), req.warehouseCode(),
                 req.quantity(), granted, req.quantity() - granted, stock.getAvailableStock()
         );
-    }
-
-    private ReserveResponse replay(StockReservation r, int requested) {
-        int available =
-                stockRepository.findBySkuAndWarehouseCode(r.getSku(), r.getWarehouseCode())
-                        .map(Stock::getAvailableStock).orElse(0);
-
-        return new ReserveResponse(
-                r.getId(), r.getSoNumber(), r.getSku(), r.getWarehouseCode(),
-                requested, r.getQuantity(), requested - r.getQuantity(), available);
     }
 
     @Transactional
