@@ -39,6 +39,11 @@ public class MessageRelay {
                 log.warn("relay failed outboxId={} topic={} attempts={}",
                         ev.getId(), ev.getTopic(), ev.getAttempts(), ex);
             }
+
+            // The scheduled thread has no open session/tx (OSIV covers web threads only),
+            // so the entity is detached and dirty-checking won't flush. Persist explicitly,
+            // else SENT never sticks and every PENDING row is re-sent every poll (dup storm).
+            outboxRepository.save(ev);
         }
 
     }
