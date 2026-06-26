@@ -43,6 +43,10 @@ public class OutboxEvent {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private int attempts;
 
+    // Earliest instant the relay may (re)send this row. Drives backoff while PENDING
+    // and the re-drain cooldown while FAILED. Legacy rows may be null = send now.
+    private Instant nextRetryAt;
+
     @Builder
     public OutboxEvent(String eventId, String topic, String msgKey, String payload) {
         this.eventId = eventId;
@@ -50,6 +54,7 @@ public class OutboxEvent {
         this.msgKey = msgKey;
         this.payload = payload;
         this.outboxStatus = OutboxStatus.PENDING;
+        this.nextRetryAt = Instant.now();   // immediately due
     }
 
     public void markSent() {
@@ -57,7 +62,22 @@ public class OutboxEvent {
         this.sentAt = Instant.now();
     }
 
-    public void markFailed() { this.outboxStatus = OutboxStatus.FAILED; }
     public void bumpAttempt() { this.attempts++; }
+
+    // Transient failure: stay PENDING, retry no earlier than {@code next}.
+    public void scheduleRetry(Instant next) { this.nextRetryAt = next; }
+
+    // Attempt ceiling hit: terminal-ish FAILED, eligible for re-drain at {@code redrainAt}.
+    public void markFailed(Instant redrainAt) {
+        this.outboxStatus = OutboxStatus.FAILED;
+        this.nextRetryAt = redrainAt;
+    }
+
+    // Re-drain: push a FAILED row back to PENDING with a fresh retry budget.
+    public void requeue() {
+        this.outboxStatus = OutboxStatus.PENDING;
+        this.attempts = 0;
+        this.nextRetryAt = Instant.now();
+    }
 
 }
